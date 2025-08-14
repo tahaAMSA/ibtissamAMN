@@ -1,12 +1,16 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
 enum UserRole {
   ADMIN
   SOCIAL_WORKER
@@ -16,21 +20,22 @@ enum UserRole {
   FINANCIAL
 }
 
-enum ActivityCategory {
-  RECREATIONAL
-  TRAINING
-}
-
 enum DocumentType {
-  SOCIAL
-  MEDICAL
-  PSYCHOLOGICAL
+  IDENTITY_CARD
+  BIRTH_CERTIFICATE
+  RESIDENCE_CERTIFICATE
+  MEDICAL_CERTIFICATE
+  SCHOOL_CERTIFICATE
+  INCOME_CERTIFICATE
+  FAMILY_COMPOSITION
+  PHOTO
+  OTHER
 }
 
 enum DocumentStatus {
   ACTIVE
   ARCHIVED
-  CLOSED
+  EXPIRED
 }
 
 enum InterventionStatus {
@@ -42,8 +47,8 @@ enum InterventionStatus {
 
 enum StayStatus {
   ACTIVE
-  COMPLETED
-  CANCELLED
+  ENDED
+  SUSPENDED
 }
 
 enum MealType {
@@ -55,21 +60,35 @@ enum MealType {
 
 enum ResourceType {
   FOOD
-  MATERIAL
+  CLOTHING
+  HYGIENE
+  SCHOOL_SUPPLIES
   MEDICAL
-  EDUCATIONAL
+  OTHER
 }
 
 enum EducationStatus {
   ACTIVE
   COMPLETED
-  DROPPED
+  ABANDONED
+  SUSPENDED
 }
 
 enum ProgramStatus {
   ACTIVE
   COMPLETED
-  DROPPED
+  ABANDONED
+  SUSPENDED
+}
+
+enum ActivityCategory {
+  SPORTS
+  CULTURAL
+  EDUCATIONAL
+  SOCIAL
+  RECREATIONAL
+  THERAPEUTIC
+  OTHER
 }
 
 enum ActivityStatus {
@@ -79,33 +98,29 @@ enum ActivityStatus {
   CANCELLED
 }
 
-enum ProjectStatus {
-  ACTIVE
-  SUSPENDED
-  ABANDONED
-  SUCCESSFUL
-}
-
 enum ProjectProgress {
   IDEA
-  STUDY
-  PLAN
-  STARTUP
-  IN_PROGRESS
+  DEVELOPMENT
+  IMPLEMENTATION
+  FINALIZATION
   COMPLETED
 }
 
+enum ProjectStatus {
+  ACTIVE
+  SUSPENDED
+  COMPLETED
+  ABANDONED
+}
+
+// Models
 model User {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
-
   email                     String?         @unique
   username                  String?         @unique
   isAdmin                   Boolean         @default(false)
-
   files                     File[]
-  
-  // GEPS fields
   role                      UserRole        @default(SOCIAL_WORKER)
   firstName                 String?
   lastName                  String?
@@ -132,21 +147,98 @@ model User {
 model File {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
-
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
-
   name                      String
   type                      String
   key                       String
   uploadUrl                 String
 }
 
+// Enums for Beneficiary Form
+enum StatutBeneficiaire {
+  RESIDENTE
+  MIGRANTE
+  TOURISTE
+  REFUGIEE
+  EN_TRANSIT
+  AUTRE
+}
+
+enum StatutMatrimonial {
+  CELIBATAIRE
+  MARIEE_AVEC_CONTRAT
+  MARIEE_SANS_CONTRAT
+  DIVORCEE
+  VEUVE
+  FIANCEE
+  MERE_CELIBATAIRE
+  AUTRE
+}
+
+enum TypeLogement {
+  MAISON_FAMILIALE
+  AVEC_FAMILLE_EPOUSE
+  AVEC_FAMILLE_EPOUX
+  INDEPENDANT
+}
+
+enum SituationSante {
+  MALADIE_CHRONIQUE
+  MALADIE_MENTALE
+  HANDICAP_SENSORIEL
+  HANDICAP_MOTEUR
+  HANDICAP_INTELLECTUEL
+  ENCEINTE
+  NORMALE
+}
+
+enum NiveauEducation {
+  ANALPHABETE
+  PRIMAIRE
+  COLLEGE
+  LYCEE
+  UNIVERSITAIRE
+  AUTRE
+}
+
+enum ActiviteProfessionnelle {
+  FEMME_MENAGE
+  EMPLOYEE
+  FONCTIONNAIRE
+  PROFESSION_LIBERALE
+  ETUDIANTE
+  AU_FOYER
+  SANS_EMPLOI
+  RETRAITEE
+  AUTRE
+}
+
+enum StatutDossier {
+  PREMIERES_ETAPES
+  MI_PARCOURS
+  AVANCEE
+  TRES_AVANCEE
+  TERMINEE
+}
+
+enum TrancheAge {
+  MOINS_18
+  AGE_18_25
+  AGE_26_30
+  AGE_31_35
+  AGE_36_40
+  AGE_41_45
+  AGE_46_50
+  PLUS_50
+}
+
 model Beneficiary {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
+  
+  // Informations basiques
   firstName                 String
   lastName                  String
   gender                    String
@@ -156,6 +248,87 @@ model Beneficiary {
   familySituation           String?
   professionalSituation     String?
   isActive                  Boolean         @default(true)
+  
+  // Informations supplémentaires
+  emergencyContact          String?
+  emergencyPhone            String?
+  nationalId                String?
+  birthPlace                String?
+  maritalStatus             String?
+  numberOfChildren          Int?            @default(0)
+  monthlyIncome             Int?            @default(0)
+  educationLevel            String?
+  healthConditions          String?
+  notes                     String?
+  
+  // Informations entretien
+  intervenanteName          String?
+  interviewDuration         String?
+  
+  // Historique avec le centre
+  dejabeneficie             Boolean?        @default(false)
+  dateBeneficePrecedent     DateTime?
+  numDossierPrecedent       String?
+  declarationViolenceCellule String[]
+  
+  // Identité détaillée
+  nomComplet                String?
+  age                       Int?
+  nationalite               String?
+  cni                       String?
+  statut                    StatutBeneficiaire?
+  
+  // Dossier
+  numDossier                String?
+  annee                     Int?
+  dateOuverture             DateTime?
+  statutDossier             StatutDossier?
+  
+  // Motifs de la visite
+  motifs                    String[]
+  
+  // Canal de connaissance
+  canaux                    String[]
+  
+  // Origine de l'orientation
+  sourcesOrientation        String[]
+  
+  // Profil personnel détaillé
+  trancheAge                TrancheAge?
+  ageMariage                Int?
+  nbEnfants                 Int?
+  dureeMariageCourant       String?
+  mariagePrecedent          Boolean?
+  statutMatrimonial         StatutMatrimonial?
+  logement                  TypeLogement?
+  sante                     SituationSante[]
+  education                 NiveauEducation?
+  profession                ActiviteProfessionnelle?
+  
+  // Violences (JSON pour stocker la structure complexe)
+  violencePhysique          Json?
+  violencePsychologique     Json?
+  violenceSexuelle          Json?
+  violenceEconomique        Json?
+  violenceElectronique      Json?
+  
+  // Informations sur l'agresseur
+  agresseurInfo             Json?
+  
+  // Description et documents
+  description               String?
+  rapport                   String?
+  piecesJointes             String[]
+  
+  // Services et suivi
+  proceduresJuridiques      Json?
+  proceduresAdministratives Json?
+  hebergement               Boolean?        @default(false)
+  priseEnChargeDistance     Boolean?        @default(false)
+  orientationInterne        String[]
+  orientationExterne        String[]
+  satisfaction              String?
+  resultatFinal             String?
 
   // Relations
   documents                 Document[]
@@ -172,7 +345,6 @@ model Document {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   type                      DocumentType
   content                   String
   date                      DateTime
@@ -189,7 +361,6 @@ model SocialIntervention {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   title                     String
   description               String
   interventionDate          DateTime
@@ -206,7 +377,6 @@ model Stay {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   dormitory                 String
   bed                       String
   checkInDate               DateTime
@@ -224,7 +394,6 @@ model Meal {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   type                      MealType
   menu                      String
   preferences               String?         // allergies, special diets
@@ -242,7 +411,6 @@ model Resource {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   name                      String
   type                      ResourceType
   quantity                  Int
@@ -256,7 +424,6 @@ model Education {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   institution               String
   level                     String
   academicYear              String
@@ -277,7 +444,6 @@ model Enrollment {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   program                   String
   module                    String?
   enrollmentDate            DateTime
@@ -295,7 +461,6 @@ model Activity {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   title                     String
   category                  ActivityCategory
   description               String?
@@ -315,7 +480,6 @@ model ActivityParticipation {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   isPresent                 Boolean         @default(false)
   comment                   String?
 
@@ -334,7 +498,6 @@ model Training {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   title                     String
   description               String?
   startDate                 DateTime
@@ -353,7 +516,6 @@ model EntrepreneurialProject {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   title                     String
   description               String
   idea                      String
@@ -373,7 +535,6 @@ model Budget {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   module                    String
   year                      Int
   initialAmount             Float
@@ -391,7 +552,6 @@ model Expense {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   label                     String
   amount                    Float
   date                      DateTime
@@ -409,7 +569,6 @@ model Revenue {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
-
   source                    String
   amount                    Float
   date                      DateTime
@@ -421,4 +580,3 @@ model Revenue {
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
 }
-

@@ -68,7 +68,7 @@ app OpenSaaS {
       // }
     },
     onAuthFailedRedirectTo: "/login",
-    onAuthSucceededRedirectTo: "/demo-app",
+    onAuthSucceededRedirectTo: "/dashboard",
   },
 
   db: {
@@ -95,6 +95,8 @@ app OpenSaaS {
     },
   },
 }
+
+
 
 route LandingPageRoute { path: "/", to: LandingPage }
 page LandingPage {
@@ -163,6 +165,344 @@ query getAllFilesByUser {
 query getDownloadFileSignedURL {
   fn: import { getDownloadFileSignedURL } from "@src/file-upload/operations",
   entities: [User, File]
+}
+//#endregion
+
+//#region GEPS Dashboard
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  authRequired: true,
+  component: import Dashboard from "@src/dashboard/DashboardPage"
+}
+
+// Bénéficiaires
+route BeneficiariesRoute { path: "/beneficiaries", to: BeneficiariesPage }
+page BeneficiariesPage {
+  authRequired: true,
+  component: import BeneficiariesPage from "@src/beneficiaries/BeneficiariesPage"
+}
+
+route BeneficiaryDetailRoute { path: "/beneficiaries/:id", to: BeneficiaryDetailPage }
+page BeneficiaryDetailPage {
+  authRequired: true,
+  component: import BeneficiaryDetailPage from "@src/beneficiaries/BeneficiaryDetailPage"
+}
+
+// Documents
+route DocumentsRoute { path: "/documents", to: DocumentsPage }
+page DocumentsPage {
+  authRequired: true,
+  component: import DocumentsPage from "@src/documents/DocumentsPage"
+}
+
+// Interventions Sociales
+route InterventionsRoute { path: "/interventions", to: InterventionsPage }
+page InterventionsPage {
+  authRequired: true,
+  component: import InterventionsPage from "@src/interventions/InterventionsPage"
+}
+
+// Hébergement
+route AccommodationRoute { path: "/accommodation", to: AccommodationPage }
+page AccommodationPage {
+  authRequired: true,
+  component: import AccommodationPage from "@src/accommodation/AccommodationPage"
+}
+
+// Repas
+route MealsRoute { path: "/meals", to: MealsPage }
+page MealsPage {
+  authRequired: true,
+  component: import MealsPage from "@src/meals/MealsPage"
+}
+
+// Ressources
+route ResourcesRoute { path: "/resources", to: ResourcesPage }
+page ResourcesPage {
+  authRequired: true,
+  component: import ResourcesPage from "@src/resources/ResourcesPage"
+}
+
+// Éducation
+route EducationRoute { path: "/education", to: EducationPage }
+page EducationPage {
+  authRequired: true,
+  component: import EducationPage from "@src/education/EducationPage"
+}
+
+// Activités
+route ActivitiesRoute { path: "/activities", to: ActivitiesPage }
+page ActivitiesPage {
+  authRequired: true,
+  component: import ActivitiesPage from "@src/activities/ActivitiesPage"
+}
+
+// Formations
+route TrainingRoute { path: "/training", to: TrainingPage }
+page TrainingPage {
+  authRequired: true,
+  component: import TrainingPage from "@src/training/TrainingPage"
+}
+
+// Projets Entrepreneuriaux
+route ProjectsRoute { path: "/projects", to: ProjectsPage }
+page ProjectsPage {
+  authRequired: true,
+  component: import ProjectsPage from "@src/projects/ProjectsPage"
+}
+
+// Budget
+route BudgetRoute { path: "/budget", to: BudgetPage }
+page BudgetPage {
+  authRequired: true,
+  component: import BudgetPage from "@src/budget/BudgetPage"
+}
+
+// Opérations CRUD pour tous les modules
+// Bénéficiaires
+query getAllBeneficiaries {
+  fn: import { getAllBeneficiaries } from "@src/beneficiaries/operations",
+  entities: [Beneficiary, User]
+}
+
+query getBeneficiaryById {
+  fn: import { getBeneficiaryById } from "@src/beneficiaries/operations",
+  entities: [Beneficiary, Document, Stay, Meal, ActivityParticipation, EntrepreneurialProject, Enrollment, Education]
+}
+
+action createBeneficiary {
+  fn: import { createBeneficiary } from "@src/beneficiaries/operations",
+  entities: [Beneficiary, User]
+}
+
+action updateBeneficiary {
+  fn: import { updateBeneficiary } from "@src/beneficiaries/operations",
+  entities: [Beneficiary, User]
+}
+
+action deleteBeneficiary {
+  fn: import { deleteBeneficiary } from "@src/beneficiaries/operations",
+  entities: [Beneficiary, User]
+}
+
+// Documents
+query getAllDocuments {
+  fn: import { getAllDocuments } from "@src/documents/operations",
+  entities: [Document, Beneficiary, User]
+}
+
+action createDocument {
+  fn: import { createDocument } from "@src/documents/operations",
+  entities: [Document, Beneficiary, User]
+}
+
+action updateDocument {
+  fn: import { updateDocument } from "@src/documents/operations",
+  entities: [Document, User]
+}
+
+action deleteDocument {
+  fn: import { deleteDocument } from "@src/documents/operations",
+  entities: [Document, User]
+}
+
+// Interventions Sociales
+query getAllInterventions {
+  fn: import { getAllInterventions } from "@src/interventions/operations",
+  entities: [SocialIntervention, User]
+}
+
+action createIntervention {
+  fn: import { createIntervention } from "@src/interventions/operations",
+  entities: [SocialIntervention, User]
+}
+
+action updateIntervention {
+  fn: import { updateIntervention } from "@src/interventions/operations",
+  entities: [SocialIntervention, User]
+}
+
+action deleteIntervention {
+  fn: import { deleteIntervention } from "@src/interventions/operations",
+  entities: [SocialIntervention, User]
+}
+
+// Hébergement
+query getAllStays {
+  fn: import { getAllStays } from "@src/accommodation/operations",
+  entities: [Stay, Beneficiary, User]
+}
+
+action createStay {
+  fn: import { createStay } from "@src/accommodation/operations",
+  entities: [Stay, Beneficiary, User]
+}
+
+action updateStay {
+  fn: import { updateStay } from "@src/accommodation/operations",
+  entities: [Stay, User]
+}
+
+action deleteStay {
+  fn: import { deleteStay } from "@src/accommodation/operations",
+  entities: [Stay, User]
+}
+
+// Repas
+query getAllMeals {
+  fn: import { getAllMeals } from "@src/meals/operations",
+  entities: [Meal, Beneficiary, User]
+}
+
+action createMeal {
+  fn: import { createMeal } from "@src/meals/operations",
+  entities: [Meal, Beneficiary, User]
+}
+
+action updateMeal {
+  fn: import { updateMeal } from "@src/meals/operations",
+  entities: [Meal, User]
+}
+
+action deleteMeal {
+  fn: import { deleteMeal } from "@src/meals/operations",
+  entities: [Meal, User]
+}
+
+// Ressources
+query getAllResources {
+  fn: import { getAllResources } from "@src/resources/operations",
+  entities: [Resource]
+}
+
+action createResource {
+  fn: import { createResource } from "@src/resources/operations",
+  entities: [Resource]
+}
+
+action updateResource {
+  fn: import { updateResource } from "@src/resources/operations",
+  entities: [Resource]
+}
+
+action deleteResource {
+  fn: import { deleteResource } from "@src/resources/operations",
+  entities: [Resource]
+}
+
+// Éducation
+query getAllEducations {
+  fn: import { getAllEducations } from "@src/education/operations",
+  entities: [Education, Beneficiary, User]
+}
+
+action createEducation {
+  fn: import { createEducation } from "@src/education/operations",
+  entities: [Education, Beneficiary, User]
+}
+
+action updateEducation {
+  fn: import { updateEducation } from "@src/education/operations",
+  entities: [Education, User]
+}
+
+action deleteEducation {
+  fn: import { deleteEducation } from "@src/education/operations",
+  entities: [Education, User]
+}
+
+// Activités
+query getAllActivities {
+  fn: import { getAllActivities } from "@src/activities/operations",
+  entities: [Activity, User, ActivityParticipation, Beneficiary]
+}
+
+action createActivity {
+  fn: import { createActivity } from "@src/activities/operations",
+  entities: [Activity, User]
+}
+
+action updateActivity {
+  fn: import { updateActivity } from "@src/activities/operations",
+  entities: [Activity, User]
+}
+
+action deleteActivity {
+  fn: import { deleteActivity } from "@src/activities/operations",
+  entities: [Activity, User]
+}
+
+// Formations
+query getAllTraining {
+  fn: import { getAllTraining } from "@src/training/operations",
+  entities: [Training, User, Beneficiary]
+}
+
+action createTraining {
+  fn: import { createTraining } from "@src/training/operations",
+  entities: [Training, User]
+}
+
+action updateTraining {
+  fn: import { updateTraining } from "@src/training/operations",
+  entities: [Training, User]
+}
+
+action deleteTraining {
+  fn: import { deleteTraining } from "@src/training/operations",
+  entities: [Training, User]
+}
+
+// Projets Entrepreneuriaux
+query getAllProjects {
+  fn: import { getAllProjects } from "@src/projects/operations",
+  entities: [EntrepreneurialProject, Beneficiary, User]
+}
+
+action createProject {
+  fn: import { createProject } from "@src/projects/operations",
+  entities: [EntrepreneurialProject, Beneficiary, User]
+}
+
+action updateProject {
+  fn: import { updateProject } from "@src/projects/operations",
+  entities: [EntrepreneurialProject, User]
+}
+
+action deleteProject {
+  fn: import { deleteProject } from "@src/projects/operations",
+  entities: [EntrepreneurialProject, User]
+}
+
+// Budget
+query getAllBudgets {
+  fn: import { getAllBudgets } from "@src/budget/operations",
+  entities: [Budget, User, Expense, Revenue]
+}
+
+action createBudget {
+  fn: import { createBudget } from "@src/budget/operations",
+  entities: [Budget, User]
+}
+
+action updateBudget {
+  fn: import { updateBudget } from "@src/budget/operations",
+  entities: [Budget, User]
+}
+
+action deleteBudget {
+  fn: import { deleteBudget } from "@src/budget/operations",
+  entities: [Budget, User]
+}
+
+action createExpense {
+  fn: import { createExpense } from "@src/budget/operations",
+  entities: [Expense, Budget, User]
+}
+
+action createRevenue {
+  fn: import { createRevenue } from "@src/budget/operations",
+  entities: [Revenue, Budget, User]
 }
 //#endregion
 

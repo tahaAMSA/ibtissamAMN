@@ -1,55 +1,95 @@
-/*
-  Warnings:
-
-  - Added the required column `updatedAt` to the `User` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'SOCIAL_WORKER', 'MEDICAL', 'EDUCATIONAL', 'TECHNICAL', 'FINANCIAL');
 
 -- CreateEnum
-CREATE TYPE "ActivityCategory" AS ENUM ('RECREATIONAL', 'TRAINING');
+CREATE TYPE "DocumentType" AS ENUM ('IDENTITY_CARD', 'BIRTH_CERTIFICATE', 'RESIDENCE_CERTIFICATE', 'MEDICAL_CERTIFICATE', 'SCHOOL_CERTIFICATE', 'INCOME_CERTIFICATE', 'FAMILY_COMPOSITION', 'PHOTO', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "DocumentType" AS ENUM ('SOCIAL', 'MEDICAL', 'PSYCHOLOGICAL');
-
--- CreateEnum
-CREATE TYPE "DocumentStatus" AS ENUM ('ACTIVE', 'ARCHIVED', 'CLOSED');
+CREATE TYPE "DocumentStatus" AS ENUM ('ACTIVE', 'ARCHIVED', 'EXPIRED');
 
 -- CreateEnum
 CREATE TYPE "InterventionStatus" AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "StayStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'CANCELLED');
+CREATE TYPE "StayStatus" AS ENUM ('ACTIVE', 'ENDED', 'SUSPENDED');
 
 -- CreateEnum
 CREATE TYPE "MealType" AS ENUM ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK');
 
 -- CreateEnum
-CREATE TYPE "ResourceType" AS ENUM ('FOOD', 'MATERIAL', 'MEDICAL', 'EDUCATIONAL');
+CREATE TYPE "ResourceType" AS ENUM ('FOOD', 'CLOTHING', 'HYGIENE', 'SCHOOL_SUPPLIES', 'MEDICAL', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "EducationStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'DROPPED');
+CREATE TYPE "EducationStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'ABANDONED', 'SUSPENDED');
 
 -- CreateEnum
-CREATE TYPE "ProgramStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'DROPPED');
+CREATE TYPE "ProgramStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'ABANDONED', 'SUSPENDED');
+
+-- CreateEnum
+CREATE TYPE "ActivityCategory" AS ENUM ('SPORTS', 'CULTURAL', 'EDUCATIONAL', 'SOCIAL', 'RECREATIONAL', 'THERAPEUTIC', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "ActivityStatus" AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'SUSPENDED', 'ABANDONED', 'SUCCESSFUL');
+CREATE TYPE "ProjectProgress" AS ENUM ('IDEA', 'DEVELOPMENT', 'IMPLEMENTATION', 'FINALIZATION', 'COMPLETED');
 
 -- CreateEnum
-CREATE TYPE "ProjectProgress" AS ENUM ('IDEA', 'STUDY', 'PLAN', 'STARTUP', 'IN_PROGRESS', 'COMPLETED');
+CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'SUSPENDED', 'COMPLETED', 'ABANDONED');
 
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "firstName" TEXT,
-ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "lastName" TEXT,
-ADD COLUMN     "phone" TEXT,
-ADD COLUMN     "role" "UserRole" NOT NULL DEFAULT 'SOCIAL_WORKER',
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+-- CreateEnum
+CREATE TYPE "StatutBeneficiaire" AS ENUM ('RESIDENTE', 'MIGRANTE', 'TOURISTE', 'REFUGIEE', 'EN_TRANSIT', 'AUTRE');
+
+-- CreateEnum
+CREATE TYPE "StatutMatrimonial" AS ENUM ('CELIBATAIRE', 'MARIEE_AVEC_CONTRAT', 'MARIEE_SANS_CONTRAT', 'DIVORCEE', 'VEUVE', 'FIANCEE', 'MERE_CELIBATAIRE', 'AUTRE');
+
+-- CreateEnum
+CREATE TYPE "TypeLogement" AS ENUM ('MAISON_FAMILIALE', 'AVEC_FAMILLE_EPOUSE', 'AVEC_FAMILLE_EPOUX', 'INDEPENDANT');
+
+-- CreateEnum
+CREATE TYPE "SituationSante" AS ENUM ('MALADIE_CHRONIQUE', 'MALADIE_MENTALE', 'HANDICAP_SENSORIEL', 'HANDICAP_MOTEUR', 'HANDICAP_INTELLECTUEL', 'ENCEINTE', 'NORMALE');
+
+-- CreateEnum
+CREATE TYPE "NiveauEducation" AS ENUM ('ANALPHABETE', 'PRIMAIRE', 'COLLEGE', 'LYCEE', 'UNIVERSITAIRE', 'AUTRE');
+
+-- CreateEnum
+CREATE TYPE "ActiviteProfessionnelle" AS ENUM ('FEMME_MENAGE', 'EMPLOYEE', 'FONCTIONNAIRE', 'PROFESSION_LIBERALE', 'ETUDIANTE', 'AU_FOYER', 'SANS_EMPLOI', 'RETRAITEE', 'AUTRE');
+
+-- CreateEnum
+CREATE TYPE "StatutDossier" AS ENUM ('PREMIERES_ETAPES', 'MI_PARCOURS', 'AVANCEE', 'TRES_AVANCEE', 'TERMINEE');
+
+-- CreateEnum
+CREATE TYPE "TrancheAge" AS ENUM ('MOINS_18', 'AGE_18_25', 'AGE_26_30', 'AGE_31_35', 'AGE_36_40', 'AGE_41_45', 'AGE_46_50', 'PLUS_50');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "email" TEXT,
+    "username" TEXT,
+    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "role" "UserRole" NOT NULL DEFAULT 'SOCIAL_WORKER',
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "phone" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "File" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "uploadUrl" TEXT NOT NULL,
+
+    CONSTRAINT "File_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Beneficiary" (
@@ -65,6 +105,51 @@ CREATE TABLE "Beneficiary" (
     "familySituation" TEXT,
     "professionalSituation" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "intervenanteName" TEXT,
+    "interviewDuration" TEXT,
+    "dejabeneficie" BOOLEAN DEFAULT false,
+    "dateBeneficePrecedent" TIMESTAMP(3),
+    "numDossierPrecedent" TEXT,
+    "declarationViolenceCellule" TEXT[],
+    "nomComplet" TEXT,
+    "age" INTEGER,
+    "nationalite" TEXT,
+    "cni" TEXT,
+    "statut" "StatutBeneficiaire",
+    "numDossier" TEXT,
+    "annee" INTEGER,
+    "dateOuverture" TIMESTAMP(3),
+    "statutDossier" "StatutDossier",
+    "motifs" TEXT[],
+    "canaux" TEXT[],
+    "sourcesOrientation" TEXT[],
+    "trancheAge" "TrancheAge",
+    "ageMariage" INTEGER,
+    "nbEnfants" INTEGER,
+    "dureeMariageCourant" TEXT,
+    "mariagePrecedent" BOOLEAN,
+    "statutMatrimonial" "StatutMatrimonial",
+    "logement" "TypeLogement",
+    "sante" "SituationSante"[],
+    "education" "NiveauEducation",
+    "profession" "ActiviteProfessionnelle",
+    "violencePhysique" JSONB,
+    "violencePsychologique" JSONB,
+    "violenceSexuelle" JSONB,
+    "violenceEconomique" JSONB,
+    "violenceElectronique" JSONB,
+    "agresseurInfo" JSONB,
+    "description" TEXT,
+    "rapport" TEXT,
+    "piecesJointes" TEXT[],
+    "proceduresJuridiques" JSONB,
+    "proceduresAdministratives" JSONB,
+    "hebergement" BOOLEAN DEFAULT false,
+    "priseEnChargeDistance" BOOLEAN DEFAULT false,
+    "orientationInterne" TEXT[],
+    "orientationExterne" TEXT[],
+    "satisfaction" TEXT,
+    "resultatFinal" TEXT,
 
     CONSTRAINT "Beneficiary_pkey" PRIMARY KEY ("id")
 );
@@ -297,19 +382,64 @@ CREATE TABLE "Revenue" (
 );
 
 -- CreateTable
+CREATE TABLE "Auth" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+
+    CONSTRAINT "Auth_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AuthIdentity" (
+    "providerName" TEXT NOT NULL,
+    "providerUserId" TEXT NOT NULL,
+    "providerData" TEXT NOT NULL DEFAULT '{}',
+    "authId" TEXT NOT NULL,
+
+    CONSTRAINT "AuthIdentity_pkey" PRIMARY KEY ("providerName","providerUserId")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_BeneficiaryToTraining" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ActivityParticipation_beneficiaryId_activityId_key" ON "ActivityParticipation"("beneficiaryId", "activityId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Auth_userId_key" ON "Auth"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_id_key" ON "Session"("id");
+
+-- CreateIndex
+CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_BeneficiaryToTraining_AB_unique" ON "_BeneficiaryToTraining"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_BeneficiaryToTraining_B_index" ON "_BeneficiaryToTraining"("B");
+
+-- AddForeignKey
+ALTER TABLE "File" ADD CONSTRAINT "File_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Document" ADD CONSTRAINT "Document_beneficiaryId_fkey" FOREIGN KEY ("beneficiaryId") REFERENCES "Beneficiary"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -379,6 +509,15 @@ ALTER TABLE "Revenue" ADD CONSTRAINT "Revenue_budgetId_fkey" FOREIGN KEY ("budge
 
 -- AddForeignKey
 ALTER TABLE "Revenue" ADD CONSTRAINT "Revenue_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Auth" ADD CONSTRAINT "Auth_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuthIdentity" ADD CONSTRAINT "AuthIdentity_authId_fkey" FOREIGN KEY ("authId") REFERENCES "Auth"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Auth"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_BeneficiaryToTraining" ADD CONSTRAINT "_BeneficiaryToTraining_A_fkey" FOREIGN KEY ("A") REFERENCES "Beneficiary"("id") ON DELETE CASCADE ON UPDATE CASCADE;

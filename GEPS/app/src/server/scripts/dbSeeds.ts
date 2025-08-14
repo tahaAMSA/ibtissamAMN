@@ -92,11 +92,11 @@ function generateMockBeneficiariesData(count: number) {
 function generateMockResourcesData() {
   const resources = [
     { name: 'Rice', type: 'FOOD' as const, quantity: 100, unit: 'kg', module: 'Kitchen', alertThreshold: 20 },
-    { name: 'Blankets', type: 'MATERIAL' as const, quantity: 50, unit: 'units', module: 'Dormitory', alertThreshold: 10 },
+    { name: 'Blankets', type: 'OTHER' as const, quantity: 50, unit: 'units', module: 'Dormitory', alertThreshold: 10 },
     { name: 'First Aid Kit', type: 'MEDICAL' as const, quantity: 15, unit: 'units', module: 'Medical', alertThreshold: 5 },
-    { name: 'Books', type: 'EDUCATIONAL' as const, quantity: 200, unit: 'units', module: 'Library', alertThreshold: 50 },
+    { name: 'Books', type: 'OTHER' as const, quantity: 200, unit: 'units', module: 'Library', alertThreshold: 50 },
     { name: 'Cooking Oil', type: 'FOOD' as const, quantity: 30, unit: 'liters', module: 'Kitchen', alertThreshold: 5 },
-    { name: 'Towels', type: 'MATERIAL' as const, quantity: 80, unit: 'units', module: 'Dormitory', alertThreshold: 15 },
+    { name: 'Towels', type: 'OTHER' as const, quantity: 80, unit: 'units', module: 'Dormitory', alertThreshold: 15 },
   ];
 
   return resources.map(resource => ({
@@ -111,7 +111,7 @@ function generateMockActivitiesData(count: number) {
       'Art Workshop', 'Sports Day', 'Cooking Class', 'Computer Training',
       'Language Course', 'Music Session', 'Gardening Activity', 'Reading Club'
     ]),
-    category: faker.helpers.arrayElement(['RECREATIONAL', 'TRAINING'] as const),
+    category: faker.helpers.arrayElement(['SPORTS', 'CULTURAL', 'EDUCATIONAL'] as const),
     description: faker.lorem.sentence(),
     location: faker.helpers.arrayElement(['Main Hall', 'Garden', 'Computer Room', 'Kitchen', 'Library']),
     startDate: faker.date.future(),
