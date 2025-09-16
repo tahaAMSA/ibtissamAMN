@@ -1,0 +1,35 @@
+/*
+  Warnings:
+
+  - The values [SOCIAL_WORKER,MEDICAL,EDUCATIONAL,TECHNICAL,FINANCIAL] on the enum `UserRole` will be removed. If these variants are still used in the database, this will fail.
+
+*/
+-- CreateEnum
+CREATE TYPE "BeneficiaryType" AS ENUM ('FEMME', 'ENFANT');
+
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED');
+
+-- AlterEnum
+BEGIN;
+CREATE TYPE "UserRole_new" AS ENUM ('PENDING_ROLE', 'ADMIN', 'DIRECTEUR', 'AGENT_ACCUEIL', 'COORDINATEUR', 'ASSISTANTE_SOCIALE', 'TRAVAILLEUR_SOCIAL', 'CONSEILLER_JURIDIQUE', 'RESPONSABLE_HEBERGEMENT', 'RESPONSABLE_EDUCATION', 'RESPONSABLE_ACTIVITES', 'COMPTABLE', 'GESTIONNAIRE_RESSOURCES', 'DOCUMENTALISTE', 'OBSERVATEUR');
+ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole_new" USING ("role"::text::"UserRole_new");
+ALTER TYPE "UserRole" RENAME TO "UserRole_old";
+ALTER TYPE "UserRole_new" RENAME TO "UserRole";
+DROP TYPE "UserRole_old";
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'PENDING_ROLE';
+COMMIT;
+
+-- AlterTable
+ALTER TABLE "Beneficiary" ADD COLUMN     "beneficiaryType" "BeneficiaryType" NOT NULL DEFAULT 'FEMME';
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "approvedAt" TIMESTAMP(3),
+ADD COLUMN     "approvedById" TEXT,
+ADD COLUMN     "rejectionReason" TEXT,
+ADD COLUMN     "status" "UserStatus" NOT NULL DEFAULT 'PENDING_APPROVAL',
+ALTER COLUMN "role" SET DEFAULT 'PENDING_ROLE';
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
