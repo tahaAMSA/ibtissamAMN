@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { EntrepreneurialProject } from 'wasp/entities';
 import { ProjectProgress, ProjectStatus } from '@prisma/client';
+import {
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateProjectInput = {
@@ -72,58 +76,60 @@ export const createProject: CreateProject<CreateProjectInput, EntrepreneurialPro
     throw new HttpError(401, 'Non autorisé');
   }
 
-  // Validation des champs requis
-  if (!args.beneficiaryId || !args.title || !args.description || !args.idea) {
-    throw new HttpError(400, 'Les champs bénéficiaire, titre, description et idée sont obligatoires');
-  }
-
-  try {
-    // Vérifier que le bénéficiaire existe
-    const beneficiary = await context.entities.Beneficiary.findUnique({
-      where: { id: args.beneficiaryId }
-    });
-
-    if (!beneficiary) {
-      throw new HttpError(404, 'Bénéficiaire non trouvé');
+  return withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Validation des champs requis
+    if (!args.beneficiaryId || !args.title || !args.description || !args.idea) {
+      throw new HttpError(400, 'Les champs bénéficiaire, titre, description et idée sont obligatoires');
     }
 
-    return await context.entities.EntrepreneurialProject.create({
-      data: {
-        beneficiaryId: args.beneficiaryId,
-        title: args.title.trim(),
-        description: args.description.trim(),
-        idea: args.idea.trim(),
-        mentoring: args.mentoring?.trim(),
-        progress: args.progress || ProjectProgress.IDEA,
-        estimatedBudget: args.estimatedBudget,
-        status: args.status || ProjectStatus.ACTIVE,
-        userId: context.user.id
-      },
-      include: {
-        beneficiary: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
+    try {
+      // Vérifier que le bénéficiaire existe
+      const beneficiary = await context.entities.Beneficiary.findUnique({
+        where: { id: args.beneficiaryId }
+      });
+
+      if (!beneficiary) {
+        throw new HttpError(404, 'Bénéficiaire non trouvé');
+      }
+
+      return await context.entities.EntrepreneurialProject.create({
+        data: createWithOrganization(organizationId, {
+          beneficiaryId: args.beneficiaryId,
+          title: args.title.trim(),
+          description: args.description.trim(),
+          idea: args.idea.trim(),
+          mentoring: args.mentoring?.trim(),
+          progress: args.progress || ProjectProgress.IDEA,
+          estimatedBudget: args.estimatedBudget,
+          status: args.status || ProjectStatus.ACTIVE,
+          userId: context.user!.id
+        }),
+        include: {
+          beneficiary: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création du projet:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du projet');
     }
-    console.error('Erreur lors de la création du projet:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du projet');
-  }
+  });
 };
 
 // Update project

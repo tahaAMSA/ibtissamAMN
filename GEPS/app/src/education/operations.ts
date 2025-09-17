@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Education } from 'wasp/entities';
 import { EducationStatus } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateEducationInput = {
@@ -78,7 +82,8 @@ export const createEducation: CreateEducation<CreateEducationInput, Education> =
     throw new HttpError(400, 'Les champs bénéficiaire, institution, niveau, année scolaire et date de début sont obligatoires');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier que le bénéficiaire existe
     const beneficiary = await context.entities.Beneficiary.findUnique({
       where: { id: args.beneficiaryId }
@@ -88,43 +93,44 @@ export const createEducation: CreateEducation<CreateEducationInput, Education> =
       throw new HttpError(404, 'Bénéficiaire non trouvé');
     }
 
-    return await context.entities.Education.create({
-      data: {
-        beneficiaryId: args.beneficiaryId,
-        institution: args.institution.trim(),
-        level: args.level.trim(),
-        academicYear: args.academicYear.trim(),
-        startDate: new Date(args.startDate),
-        endDate: args.endDate ? new Date(args.endDate) : undefined,
-        results: args.results?.trim(),
-        activeSupport: args.activeSupport || false,
-        status: args.status || EducationStatus.ACTIVE,
-        userId: context.user.id
-      },
-      include: {
-        beneficiary: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
+      return await context.entities.Education.create({
+        data: createWithOrganization(organizationId, {
+          beneficiaryId: args.beneficiaryId,
+          institution: args.institution.trim(),
+          level: args.level.trim(),
+          academicYear: args.academicYear.trim(),
+          startDate: new Date(args.startDate),
+          endDate: args.endDate ? new Date(args.endDate) : undefined,
+          results: args.results?.trim(),
+          activeSupport: args.activeSupport || false,
+          status: args.status || EducationStatus.ACTIVE,
+          userId: context.user!.id
+        }),
+        include: {
+          beneficiary: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création de l\'éducation:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de l\'éducation');
     }
-    console.error('Erreur lors de la création de l\'éducation:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de l\'éducation');
-  }
+  });
 };
 
 // Update education

@@ -7,6 +7,13 @@ import type {
 } from 'wasp/server/operations';
 import type { Stay } from 'wasp/entities';
 import { StayStatus } from '@prisma/client';
+import { 
+  getUserOrganizationId, 
+  addOrganizationFilter, 
+  withOrganizationAccess,
+  createWithOrganization,
+  verifyOrganizationAccess
+} from '../server/multiTenant';
 
 // Types
 type CreateStayInput = {
@@ -74,7 +81,8 @@ export const createStay: CreateStay<CreateStayInput, Stay> = async (args, contex
     throw new HttpError(400, 'Les champs bénéficiaire, dortoir, lit et date d\'entrée sont obligatoires');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier que le bénéficiaire existe
     const beneficiary = await context.entities.Beneficiary.findUnique({
       where: { id: args.beneficiaryId }
@@ -109,42 +117,43 @@ export const createStay: CreateStay<CreateStayInput, Stay> = async (args, contex
       throw new HttpError(409, 'Ce lit est déjà occupé');
     }
 
-    return await context.entities.Stay.create({
-      data: {
-        beneficiaryId: args.beneficiaryId,
-        dormitory: args.dormitory.trim(),
-        bed: args.bed.trim(),
-        checkInDate: new Date(args.checkInDate),
-        checkOutDate: args.checkOutDate ? new Date(args.checkOutDate) : undefined,
-        status: args.status || StayStatus.ACTIVE,
-        userId: context.user.id
-      },
-      include: {
-        beneficiary: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            gender: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
+      return await context.entities.Stay.create({
+        data: createWithOrganization(organizationId, {
+          beneficiaryId: args.beneficiaryId,
+          dormitory: args.dormitory.trim(),
+          bed: args.bed.trim(),
+          checkInDate: new Date(args.checkInDate),
+          checkOutDate: args.checkOutDate ? new Date(args.checkOutDate) : undefined,
+          status: args.status || StayStatus.ACTIVE,
+          userId: context.user!.id
+        }),
+        include: {
+          beneficiary: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              gender: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création du séjour:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du séjour');
     }
-    console.error('Erreur lors de la création du séjour:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du séjour');
-  }
+  });
 };
 
 // Update stay

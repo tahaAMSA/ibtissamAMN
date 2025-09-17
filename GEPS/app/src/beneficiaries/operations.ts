@@ -11,6 +11,14 @@ import type { Beneficiary } from 'wasp/entities';
 import { hasPermission, filterByPermissions } from '../server/permissions';
 import { notifyDirectorsOfNewArrival } from '../notifications/operations';
 import { BeneficiaryStatus, UserRole, NotificationType } from '@prisma/client';
+import { 
+  getUserOrganizationId, 
+  addOrganizationFilter, 
+  withOrganizationAccess,
+  createWithOrganization,
+  checkOrganizationLimits,
+  verifyOrganizationAccess
+} from '../server/multiTenant';
 
 // Types
 type CreateBeneficiaryInput = {
@@ -60,7 +68,7 @@ type UpdateBeneficiaryInput = {
   isActive?: boolean;
 };
 
-// Get all beneficiaries
+// Get all beneficiaries (avec isolation multi-tenant)
 export const getAllBeneficiaries: GetAllBeneficiaries<void, Beneficiary[]> = async (args, context) => {
   if (!context.user) {
     throw new HttpError(401, 'Non autorisé');
@@ -71,54 +79,62 @@ export const getAllBeneficiaries: GetAllBeneficiaries<void, Beneficiary[]> = asy
     throw new HttpError(403, 'Accès refusé: vous n\'avez pas les permissions pour consulter les bénéficiaires');
   }
 
-  try {
-    const beneficiaries = await context.entities.Beneficiary.findMany({
-      where: {
-        isActive: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      include: {
-        documents: {
-          select: {
-            id: true,
-            type: true,
-            status: true
-          }
+  // Utiliser le système multi-tenant
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
+      const beneficiaries = await context.entities.Beneficiary.findMany({
+        where: addOrganizationFilter(organizationId, {
+          isActive: true
+        }),
+        orderBy: {
+          createdAt: 'desc'
         },
-        stays: {
-          where: {
-            status: 'ACTIVE'
+        include: {
+          documents: {
+            select: {
+              id: true,
+              type: true,
+              status: true
+            }
           },
-          select: {
-            id: true,
-            dormitory: true,
-            bed: true
+          stays: {
+            where: {
+              status: 'ACTIVE'
+            },
+            select: {
+              id: true,
+              dormitory: true,
+              bed: true
+            }
           }
         }
-      }
-    });
+      });
 
-    // Retourner les bénéficiaires (le filtrage par permissions est déjà fait au niveau de la vérification)
-    return beneficiaries;
-  } catch (error) {
-    console.error('Erreur lors de la récupération des bénéficiaires:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la récupération des bénéficiaires');
-  }
+      return beneficiaries;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des bénéficiaires:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la récupération des bénéficiaires');
+    }
+  });
 };
 
-// Get beneficiary by ID with full details
+// Get beneficiary by ID with full details (avec vérification multi-tenant)
 export const getBeneficiaryById: GetBeneficiaryById<{ id: string }, Beneficiary | null> = async (args, context) => {
   if (!context.user) {
     throw new HttpError(401, 'Non autorisé');
   }
 
-  try {
-    const beneficiary = await context.entities.Beneficiary.findUnique({
-      where: {
-        id: args.id
-      },
+  // Utiliser le système multi-tenant avec vérification d'accès
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Vérifier que le bénéficiaire appartient à l'organisation de l'utilisateur
+    await verifyOrganizationAccess(args.id, 'beneficiary', organizationId, context);
+
+    try {
+      const beneficiary = await context.entities.Beneficiary.findUnique({
+        where: {
+          id: args.id,
+          organizationId // Double sécurité
+        },
       include: {
         // Traçabilité du cycle de vie
         createdBy: {
@@ -214,17 +230,18 @@ export const getBeneficiaryById: GetBeneficiaryById<{ id: string }, Beneficiary 
       throw new HttpError(404, 'Bénéficiaire non trouvé');
     }
 
-    return beneficiary;
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      return beneficiary;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      console.error('Erreur lors de la récupération du bénéficiaire:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la récupération du bénéficiaire');
     }
-    console.error('Erreur lors de la récupération du bénéficiaire:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la récupération du bénéficiaire');
-  }
+  });
 };
 
-// Create new beneficiary
+// Create new beneficiary (avec système multi-tenant)
 export const createBeneficiary: CreateBeneficiary<CreateBeneficiaryInput, Beneficiary> = async (args, context) => {
   if (!context.user) {
     throw new HttpError(401, 'Non autorisé');
@@ -240,6 +257,11 @@ export const createBeneficiary: CreateBeneficiary<CreateBeneficiaryInput, Benefi
     throw new HttpError(400, 'Les champs nom, prénom, genre et date de naissance sont obligatoires');
   }
 
+  // Utiliser le système multi-tenant
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Vérifier les limites de l'organisation
+    await checkOrganizationLimits(organizationId, 'beneficiaries', context);
+
   try {
     // Déterminer automatiquement le type si non fourni
     let beneficiaryType = args.beneficiaryType;
@@ -251,49 +273,50 @@ export const createBeneficiary: CreateBeneficiary<CreateBeneficiaryInput, Benefi
 
     // Déterminer le statut initial basé sur le rôle de l'utilisateur
     let initialStatus: any = 'EN_ATTENTE_ACCUEIL';
-    if (context.user.role === UserRole.AGENT_ACCUEIL) {
+    if (context.user!.role === UserRole.AGENT_ACCUEIL) {
       initialStatus = 'EN_ATTENTE_ORIENTATION';
     }
 
     const newBeneficiary = await context.entities.Beneficiary.create({
-      data: {
-        firstName: args.firstName.trim(),
-        lastName: args.lastName.trim(),
-        gender: args.gender,
-        dateOfBirth: new Date(args.dateOfBirth),
-        beneficiaryType: beneficiaryType,
-        status: initialStatus,
-        visitReason: args.visitReason?.trim() as any,
-        // Enregistrer qui a fait l'accueil
-        createdById: context.user.id,
-        phone: args.phone?.trim(),
-        address: args.address?.trim(),
-        familySituation: args.familySituation?.trim(),
-        professionalSituation: args.professionalSituation?.trim(),
-        emergencyContact: args.emergencyContact?.trim(),
-        emergencyPhone: args.emergencyPhone?.trim(),
-        nationalId: args.nationalId?.trim(),
-        birthPlace: args.birthPlace?.trim(),
-        maritalStatus: args.maritalStatus?.trim(),
-        numberOfChildren: args.numberOfChildren || 0,
-        monthlyIncome: args.monthlyIncome || 0,
-        educationLevel: args.educationLevel?.trim(),
-        healthConditions: args.healthConditions?.trim(),
-        notes: args.notes?.trim(),
-        isActive: true
+        data: createWithOrganization(organizationId, {
+          firstName: args.firstName.trim(),
+          lastName: args.lastName.trim(),
+          gender: args.gender,
+          dateOfBirth: new Date(args.dateOfBirth),
+          beneficiaryType: beneficiaryType,
+          status: initialStatus,
+          visitReason: args.visitReason?.trim() as any,
+          // Enregistrer qui a fait l'accueil
+          createdById: context.user!.id,
+          phone: args.phone?.trim(),
+          address: args.address?.trim(),
+          familySituation: args.familySituation?.trim(),
+          professionalSituation: args.professionalSituation?.trim(),
+          emergencyContact: args.emergencyContact?.trim(),
+          emergencyPhone: args.emergencyPhone?.trim(),
+          nationalId: args.nationalId?.trim(),
+          birthPlace: args.birthPlace?.trim(),
+          maritalStatus: args.maritalStatus?.trim(),
+          numberOfChildren: args.numberOfChildren || 0,
+          monthlyIncome: args.monthlyIncome || 0,
+          educationLevel: args.educationLevel?.trim(),
+          healthConditions: args.healthConditions?.trim(),
+          notes: args.notes?.trim(),
+          isActive: true
+        })
+      });
+
+      // Si c'est un agent d'accueil qui crée le bénéficiaire, notifier les directeurs/coordinateurs
+      if (context.user!.role === UserRole.AGENT_ACCUEIL) {
+        await notifyDirectorsOfNewArrival(context, newBeneficiary, context.user!);
       }
-    });
 
-    // Si c'est un agent d'accueil qui crée le bénéficiaire, notifier les directeurs/coordinateurs
-    if (context.user.role === UserRole.AGENT_ACCUEIL) {
-      await notifyDirectorsOfNewArrival(context, newBeneficiary, context.user);
+      return newBeneficiary;
+    } catch (error) {
+      console.error('Erreur lors de la création du bénéficiaire:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du bénéficiaire');
     }
-
-    return newBeneficiary;
-  } catch (error) {
-    console.error('Erreur lors de la création du bénéficiaire:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du bénéficiaire');
-  }
+  });
 };
 
 // Update beneficiary
@@ -412,7 +435,8 @@ export const assignBeneficiary: AssignBeneficiary<AssignBeneficiaryInput, { succ
     throw new HttpError(403, 'Accès refusé - permissions insuffisantes');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier que le bénéficiaire existe
     const beneficiary = await context.entities.Beneficiary.findUnique({
       where: { id: args.beneficiaryId },
@@ -463,7 +487,7 @@ export const assignBeneficiary: AssignBeneficiary<AssignBeneficiaryInput, { succ
       data: {
         status: 'EN_SUIVI' as any,
         // Qui a assigné
-        orientedById: context.user.id,
+        orientedById: context.user!.id,
         orientedAt: new Date(),
         orientationReason: args.reason || 'Assignation directe',
         // Vers qui c'est assigné
@@ -474,27 +498,28 @@ export const assignBeneficiary: AssignBeneficiary<AssignBeneficiaryInput, { succ
 
     // Créer une notification pour l'assistante sociale
     await context.entities.Notification.create({
-      data: {
+      data: createWithOrganization(organizationId, {
         type: NotificationType.ORIENTATION_REQUEST,
         title: 'Nouveau dossier assigné',
         message: `Un nouveau dossier vous a été assigné : ${beneficiary.firstName} ${beneficiary.lastName}`,
-        senderId: context.user.id,
+        senderId: context.user!.id,
         receiverId: args.assignedToId,
         beneficiaryId: args.beneficiaryId,
         metadata: {
-          assignedBy: `${context.user.firstName} ${context.user.lastName}`,
+          assignedBy: `${context.user!.firstName} ${context.user!.lastName}`,
           assignmentDate: new Date().toISOString(),
           reason: args.reason || 'Assignation directe'
         }
-      }
+      })
     });
 
-    return { success: true };
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      return { success: true };
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      console.error('Erreur lors de l\'assignation du bénéficiaire:', error);
+      throw new HttpError(500, 'Erreur serveur lors de l\'assignation du bénéficiaire');
     }
-    console.error('Erreur lors de l\'assignation du bénéficiaire:', error);
-    throw new HttpError(500, 'Erreur serveur lors de l\'assignation du bénéficiaire');
-  }
+  });
 };

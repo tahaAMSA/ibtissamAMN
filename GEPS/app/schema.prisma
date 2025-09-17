@@ -260,7 +260,75 @@ enum Gender {
   AUTRE
 }
 
+// Enums pour le système d'organisation
+enum OrganizationStatus {
+  ACTIVE          // Organisation active
+  SUSPENDED       // Organisation suspendue
+  PENDING_SETUP   // En cours de configuration
+  DELETED         // Supprimée (soft delete)
+}
+
+enum PlanType {
+  FREE           // Plan gratuit (limité)
+  PROFESSIONAL   // Plan professionnel
+  ENTERPRISE     // Plan entreprise
+}
+
 // Models
+model Organization {
+  id                        String              @id @default(uuid())
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  
+  // Informations de base
+  name                      String              // Nom de l'association/organisation
+  slug                      String              @unique // Identifiant URL unique
+  logo                      String?             // URL du logo
+  description               String?             // Description de l'organisation
+  
+  // Statut et plan
+  status                    OrganizationStatus  @default(ACTIVE)
+  plan                      PlanType            @default(FREE)
+  
+  // Limites selon le plan
+  maxUsers                  Int                 @default(50)        // Max utilisateurs
+  maxBeneficiaries          Int                 @default(500)       // Max bénéficiaires
+  maxStorage                Int                 @default(1000)      // Max stockage en MB
+  
+  // Informations de contact
+  adminEmail                String              // Email de l'admin principal
+  phone                     String?             // Téléphone
+  address                   String?             // Adresse physique
+  website                   String?             // Site web
+  
+  // Facturation
+  billingEmail              String?             // Email de facturation
+  subscriptionEndDate       DateTime?           // Date de fin d'abonnement
+  
+  // Relations - Toutes les données appartiennent à l'organisation
+  users                     User[]
+  beneficiaries             Beneficiary[]
+  documents                 Document[]
+  socialInterventions       SocialIntervention[]
+  stays                     Stay[]
+  meals                     Meal[]
+  resources                 Resource[]
+  educations                Education[]
+  enrollments               Enrollment[]
+  activities                Activity[]
+  trainings                 Training[]
+  entrepreneurialProjects   EntrepreneurialProject[]
+  budgets                   Budget[]
+  timeSessions              TimeSession[]
+  notifications             Notification[]
+  roles                     Role[]
+  
+  // Index pour performance
+  @@index([slug])
+  @@index([status])
+  @@index([adminEmail])
+}
+
 model User {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
@@ -269,6 +337,10 @@ model User {
   isAdmin                   Boolean         @default(false)
   files                     File[]
   role                      UserRole        @default(PENDING_ROLE)
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization?   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String?
   
   // Noms en français
   firstName                 String?         // Prénom en français
@@ -326,6 +398,10 @@ model User {
   createdBeneficiaries      Beneficiary[]   @relation("BeneficiaryCreatedBy")
   orientedBeneficiaries     Beneficiary[]   @relation("BeneficiaryOrientedBy")  
   assignedBeneficiaries     Beneficiary[]   @relation("BeneficiaryAssignedTo")
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
+  @@index([organizationId, email])
 }
 
 model File {
@@ -473,6 +549,15 @@ model Beneficiary {
   educations                Education[]
   timeSessions              TimeSession[]
   notifications             Notification[]  @relation("BeneficiaryNotification")
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
 }
 
 model Document {
@@ -489,6 +574,13 @@ model Document {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model SocialIntervention {
@@ -505,6 +597,13 @@ model SocialIntervention {
   // Relations
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Stay {
@@ -522,6 +621,13 @@ model Stay {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Meal {
@@ -539,6 +645,13 @@ model Meal {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Resource {
@@ -552,6 +665,13 @@ model Resource {
   module                    String?         // concerned module
   alertThreshold            Int?            // threshold to trigger restock alert
   isActive                  Boolean         @default(true)
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Education {
@@ -572,6 +692,13 @@ model Education {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Enrollment {
@@ -589,6 +716,13 @@ model Enrollment {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Activity {
@@ -608,6 +742,13 @@ model Activity {
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
   participations            ActivityParticipation[]
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model ActivityParticipation {
@@ -626,6 +767,7 @@ model ActivityParticipation {
   userId                    String
 
   @@unique([beneficiaryId, activityId])
+  // Note: L'organizationId sera hérité via beneficiary et activity
 }
 
 model Training {
@@ -644,6 +786,13 @@ model Training {
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
   beneficiaries             Beneficiary[]
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model EntrepreneurialProject {
@@ -663,6 +812,13 @@ model EntrepreneurialProject {
   beneficiaryId             String
   user                      User            @relation(fields: [userId], references: [id])
   userId                    String
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Budget {
@@ -680,6 +836,13 @@ model Budget {
   userId                    String
   expenses                  Expense[]
   revenues                  Revenue[]
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
 }
 
 model Expense {
@@ -736,7 +899,12 @@ model TimeSession {
   beneficiary               Beneficiary     @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
   beneficiaryId             String
   
-  // Index pour performance
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
   @@index([beneficiaryId, userId])
   @@index([createdAt])
   @@index([isActive])
@@ -766,7 +934,12 @@ model Notification {
   // Métadonnées supplémentaires (JSON pour flexibilité)
   metadata                  Json?
   
-  // Index pour performance
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant
+  @@index([organizationId])
   @@index([receiverId, status])
   @@index([createdAt])
   @@index([type])
@@ -780,13 +953,21 @@ model Role {
   updatedAt                 DateTime        @updatedAt
   
   // Informations du rôle
-  name                      String          @unique
+  name                      String          // Nom unique par organisation
   description               String?
   isActive                  Boolean         @default(true)
   
   // Relations
   permissions               Permission[]
   users                     User[]
+  
+  // Appartenance à l'organisation (multi-tenant)
+  organization              Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId            String
+  
+  // Index pour performance multi-tenant (nom unique par organisation)
+  @@index([organizationId])
+  @@unique([organizationId, name])
 }
 
 model Permission {

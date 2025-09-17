@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { SocialIntervention } from 'wasp/entities';
 import { InterventionStatus } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateInterventionInput = {
@@ -67,32 +71,34 @@ export const createIntervention: CreateIntervention<CreateInterventionInput, Soc
     throw new HttpError(400, 'Les champs titre, description et date d\'intervention sont obligatoires');
   }
 
-  try {
-    return await context.entities.SocialIntervention.create({
-      data: {
-        title: args.title.trim(),
-        description: args.description.trim(),
-        interventionDate: new Date(args.interventionDate),
-        duration: args.duration,
-        location: args.location?.trim(),
-        status: args.status || InterventionStatus.PLANNED,
-        userId: context.user.id
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
+      return await context.entities.SocialIntervention.create({
+        data: createWithOrganization(organizationId, {
+          title: args.title.trim(),
+          description: args.description.trim(),
+          interventionDate: new Date(args.interventionDate),
+          duration: args.duration,
+          location: args.location?.trim(),
+          status: args.status || InterventionStatus.PLANNED,
+          userId: context.user!.id
+        }),
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
           }
         }
-      }
-    });
-  } catch (error) {
-    console.error('Erreur lors de la création de l\'intervention:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de l\'intervention');
-  }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'intervention:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de l\'intervention');
+    }
+  });
 };
 
 // Update intervention

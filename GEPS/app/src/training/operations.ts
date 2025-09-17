@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Training } from 'wasp/entities';
 import { ActivityStatus } from '@prisma/client';
+import {
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateTrainingInput = {
@@ -76,23 +80,24 @@ export const createTraining: CreateTraining<CreateTrainingInput, Training> = asy
     throw new HttpError(401, 'Non autorisé');
   }
 
-  // Validation des champs requis
-  if (!args.title || !args.startDate) {
-    throw new HttpError(400, 'Les champs titre et date de début sont obligatoires');
-  }
+  return withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Validation des champs requis
+    if (!args.title || !args.startDate) {
+      throw new HttpError(400, 'Les champs titre et date de début sont obligatoires');
+    }
 
-  try {
-    return await context.entities.Training.create({
-      data: {
-        title: args.title.trim(),
-        description: args.description?.trim(),
-        startDate: new Date(args.startDate),
-        endDate: args.endDate ? new Date(args.endDate) : undefined,
-        location: args.location?.trim(),
-        capacity: args.capacity,
-        status: args.status || ActivityStatus.PLANNED,
-        userId: context.user.id
-      },
+    try {
+      return await context.entities.Training.create({
+        data: createWithOrganization(organizationId, {
+          title: args.title.trim(),
+          description: args.description?.trim(),
+          startDate: new Date(args.startDate),
+          endDate: args.endDate ? new Date(args.endDate) : undefined,
+          location: args.location?.trim(),
+          capacity: args.capacity,
+          status: args.status || ActivityStatus.PLANNED,
+          userId: context.user!.id
+        }),
       include: {
         user: {
           select: {
@@ -108,11 +113,12 @@ export const createTraining: CreateTraining<CreateTrainingInput, Training> = asy
           }
         }
       }
-    });
-  } catch (error) {
-    console.error('Erreur lors de la création de la formation:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de la formation');
-  }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création de la formation:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de la formation');
+    }
+  });
 };
 
 // Update training

@@ -74,8 +74,10 @@ app OpenSaaS {
   db: {
     // Run `wasp db seed` to seed the database with the seed functions below:
     seeds: [
-      // Populates the database with a bunch of fake users to work with during development.
-      import { seedMockUsers } from "@src/server/scripts/dbSeeds",
+      // Crée l'organisation par défaut GEPS Demo
+      import { createDefaultOrganization } from "@src/server/dbSeeds",
+      // Organisation Ibtisama avec utilisateurs de base
+      import { seedIbtisamaSimple } from "@src/server/seedIbtisamaSimple",
     ]
   },
 

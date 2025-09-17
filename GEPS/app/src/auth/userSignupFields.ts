@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { defineUserSignupFields } from 'wasp/auth/providers/types';
 
+// ID de l'organisation par défaut (GEPS Demo)
+const DEFAULT_ORGANIZATION_ID = '75869652-79f9-4f60-9115-e8bc55fec4be';
+
 const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
 
 const emailDataSchema = z.object({

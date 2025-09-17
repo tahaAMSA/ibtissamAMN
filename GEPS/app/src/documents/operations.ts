@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Document } from 'wasp/entities';
 import { DocumentType, DocumentStatus } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateDocumentInput = {
@@ -71,7 +75,8 @@ export const createDocument: CreateDocument<CreateDocumentInput, Document> = asy
     throw new HttpError(400, 'Les champs type, contenu, date et bénéficiaire sont obligatoires');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier que le bénéficiaire existe
     const beneficiary = await context.entities.Beneficiary.findUnique({
       where: { id: args.beneficiaryId }
@@ -81,40 +86,41 @@ export const createDocument: CreateDocument<CreateDocumentInput, Document> = asy
       throw new HttpError(404, 'Bénéficiaire non trouvé');
     }
 
-    return await context.entities.Document.create({
-      data: {
-        type: args.type,
-        content: args.content.trim(),
-        date: new Date(args.date),
-        status: args.status || DocumentStatus.ACTIVE,
-        beneficiaryId: args.beneficiaryId,
-        userId: context.user.id
-      },
-      include: {
-        beneficiary: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
+      return await context.entities.Document.create({
+        data: createWithOrganization(organizationId, {
+          type: args.type,
+          content: args.content.trim(),
+          date: new Date(args.date),
+          status: args.status || DocumentStatus.ACTIVE,
+          beneficiaryId: args.beneficiaryId,
+          userId: context.user!.id
+        }),
+        include: {
+          beneficiary: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création du document:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du document');
     }
-    console.error('Erreur lors de la création du document:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du document');
-  }
+  });
 };
 
 // Update document

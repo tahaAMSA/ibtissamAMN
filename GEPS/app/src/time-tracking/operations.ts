@@ -7,6 +7,11 @@ import type {
   GetBeneficiaryTimeStats
 } from 'wasp/server/operations'
 import type { TimeSession } from 'wasp/entities'
+import {
+  withOrganizationAccess,
+  createWithOrganization,
+  getUserOrganizationId
+} from '../server/multiTenant'
 
 // Types pour les opérations
 type StartTimeSessionInput = {
@@ -99,15 +104,17 @@ export const startTimeSession: StartTimeSession<StartTimeSessionInput, TimeSessi
     throw new HttpError(404, 'Bénéficiaire introuvable');
   }
 
+  const organizationId = await getUserOrganizationId(context.user, context);
+  
   const session = await context.entities.TimeSession.create({
-    data: {
+    data: createWithOrganization(organizationId, {
       userId: context.user.id,
       beneficiaryId: args.beneficiaryId,
       startTime: new Date(),
       activityType: args.activityType || 'CONSULTATION_DOSSIER',
       notes: args.notes,
       isActive: true
-    },
+    }),
     include: {
       user: {
         select: {

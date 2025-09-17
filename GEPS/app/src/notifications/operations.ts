@@ -14,6 +14,11 @@ import {
   BeneficiaryStatus,
   UserRole 
 } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization,
+  getUserOrganizationId
+} from '../server/multiTenant';
 
 // Types pour les opérations
 type NotificationWithRelations = Notification & {
@@ -55,7 +60,7 @@ export const getAllNotifications: GetAllNotifications<void, NotificationWithRela
   try {
     return await context.entities.Notification.findMany({
       where: {
-        receiverId: context.user.id
+        receiverId: context.user!.id
       },
       include: {
         sender: {
@@ -94,7 +99,7 @@ export const getUnreadNotifications: GetUnreadNotifications<void, NotificationWi
   try {
     return await context.entities.Notification.findMany({
       where: {
-        receiverId: context.user.id,
+        receiverId: context.user!.id,
         status: NotificationStatus.UNREAD
       },
       include: {
@@ -136,7 +141,8 @@ export const createNotification: CreateNotification<CreateNotificationInput, Not
     throw new HttpError(400, 'Les champs type, titre, message et destinataire sont obligatoires');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier que le destinataire existe
     const receiver = await context.entities.User.findUnique({
       where: { id: args.receiverId }
@@ -157,25 +163,26 @@ export const createNotification: CreateNotification<CreateNotificationInput, Not
       }
     }
 
-    return await context.entities.Notification.create({
-      data: {
-        type: args.type,
-        title: args.title.trim(),
-        message: args.message.trim(),
-        senderId: context.user.id,
-        receiverId: args.receiverId,
-        beneficiaryId: args.beneficiaryId,
-        metadata: args.metadata,
-        status: NotificationStatus.UNREAD
-      }
-    });
+      return await context.entities.Notification.create({
+        data: createWithOrganization(organizationId, {
+          type: args.type,
+          title: args.title.trim(),
+          message: args.message.trim(),
+          senderId: context.user!.id,
+          receiverId: args.receiverId,
+          beneficiaryId: args.beneficiaryId,
+          metadata: args.metadata,
+          status: NotificationStatus.UNREAD
+        })
+      });
   } catch (error) {
     if (error instanceof HttpError) {
       throw error;
     }
-    console.error('Erreur lors de la création de la notification:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de la notification');
-  }
+      console.error('Erreur lors de la création de la notification:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de la notification');
+    }
+  });
 };
 
 // Marquer une notification comme lue
@@ -189,7 +196,7 @@ export const markNotificationAsRead: MarkNotificationAsRead<{ notificationId: st
     const notification = await context.entities.Notification.findFirst({
       where: {
         id: args.notificationId,
-        receiverId: context.user.id
+        receiverId: context.user!.id
       }
     });
 
@@ -287,7 +294,7 @@ export const orientBeneficiary: OrientBeneficiary<OrientBeneficiaryInput, Benefi
       data: {
         status: 'ORIENTE' as any,
         // Qui a orienté
-        orientedById: context.user.id,
+        orientedById: context.user!.id,
         orientedAt: new Date(),
         orientationReason: args.reason,
         // Vers qui c'est assigné
@@ -297,8 +304,9 @@ export const orientBeneficiary: OrientBeneficiary<OrientBeneficiaryInput, Benefi
     });
 
     // Créer une notification pour l'assistante sociale
+    const organizationId = await getUserOrganizationId(context.user, context);
     await context.entities.Notification.create({
-      data: {
+      data: createWithOrganization(organizationId, {
         type: NotificationType.ORIENTATION_REQUEST,
         title: 'Nouvelle orientation',
         message: `Le bénéficiaire ${beneficiary.firstName} ${beneficiary.lastName} vous a été assigné(e) par ${context.user.firstName} ${context.user.lastName}. ${args.reason ? `Raison: ${args.reason}` : ''}`,
@@ -309,7 +317,7 @@ export const orientBeneficiary: OrientBeneficiary<OrientBeneficiaryInput, Benefi
           orientationReason: args.reason,
           orientationDate: new Date().toISOString()
         }
-      }
+      })
     });
 
     return updatedBeneficiary;

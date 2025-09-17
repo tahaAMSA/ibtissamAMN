@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Activity } from 'wasp/entities';
 import { ActivityCategory, ActivityStatus } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateActivityInput = {
@@ -87,39 +91,41 @@ export const createActivity: CreateActivity<CreateActivityInput, Activity> = asy
     throw new HttpError(400, 'Les champs titre, catégorie, lieu et date de début sont obligatoires');
   }
 
-  try {
-    return await context.entities.Activity.create({
-      data: {
-        title: args.title.trim(),
-        category: args.category,
-        description: args.description?.trim(),
-        location: args.location.trim(),
-        startDate: new Date(args.startDate),
-        endDate: args.endDate ? new Date(args.endDate) : undefined,
-        capacity: args.capacity,
-        status: args.status || ActivityStatus.PLANNED,
-        userId: context.user.id
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
-          }
-        },
-        _count: {
-          select: {
-            participations: true
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
+      return await context.entities.Activity.create({
+        data: createWithOrganization(organizationId, {
+          title: args.title.trim(),
+          category: args.category,
+          description: args.description?.trim(),
+          location: args.location.trim(),
+          startDate: new Date(args.startDate),
+          endDate: args.endDate ? new Date(args.endDate) : undefined,
+          capacity: args.capacity,
+          status: args.status || ActivityStatus.PLANNED,
+          userId: context.user!.id
+        }),
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
+          },
+          _count: {
+            select: {
+              participations: true
+            }
           }
         }
-      }
-    });
-  } catch (error) {
-    console.error('Erreur lors de la création de l\'activité:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de l\'activité');
-  }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'activité:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de l\'activité');
+    }
+  });
 };
 
 // Update activity

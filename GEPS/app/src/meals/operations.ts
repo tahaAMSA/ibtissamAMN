@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Meal } from 'wasp/entities';
 import { MealType } from '@prisma/client';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateMealInput = {
@@ -72,50 +76,52 @@ export const createMeal: CreateMeal<CreateMealInput, Meal> = async (args, contex
     throw new HttpError(400, 'Les champs bénéficiaire, type, menu et date sont obligatoires');
   }
 
-  try {
-    // Vérifier que le bénéficiaire existe
-    const beneficiary = await context.entities.Beneficiary.findUnique({
-      where: { id: args.beneficiaryId }
-    });
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
+      // Vérifier que le bénéficiaire existe
+      const beneficiary = await context.entities.Beneficiary.findUnique({
+        where: { id: args.beneficiaryId }
+      });
 
-    if (!beneficiary) {
-      throw new HttpError(404, 'Bénéficiaire non trouvé');
-    }
+      if (!beneficiary) {
+        throw new HttpError(404, 'Bénéficiaire non trouvé');
+      }
 
-    return await context.entities.Meal.create({
-      data: {
-        beneficiaryId: args.beneficiaryId,
-        type: args.type,
-        menu: args.menu.trim(),
-        date: new Date(args.date),
-        preferences: args.preferences?.trim(),
-        quantity: args.quantity || 1,
-        userId: context.user.id
-      },
-      include: {
-        beneficiary: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
+      return await context.entities.Meal.create({
+        data: createWithOrganization(organizationId, {
+          beneficiaryId: args.beneficiaryId,
+          type: args.type,
+          menu: args.menu.trim(),
+          date: new Date(args.date),
+          preferences: args.preferences?.trim(),
+          quantity: args.quantity || 1,
+          userId: context.user!.id
+        }),
+        include: {
+          beneficiary: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création du repas:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du repas');
     }
-    console.error('Erreur lors de la création du repas:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du repas');
-  }
+  });
 };
 
 // Update meal

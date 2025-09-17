@@ -2,7 +2,7 @@ import { Link as WaspRouterLink, routes } from 'wasp/client/router';
 import { login } from 'wasp/client/auth';
 import { AuthPageLayout } from './AuthPageLayout';
 import { Card, CardContent, Button, Separator, Badge, Input, Label } from '../client/components/ui';
-import { ChevronRight, Shield, Users, BarChart3, LogIn, Lock, User } from 'lucide-react';
+import { ChevronRight, Shield, Users, BarChart3, LogIn, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -144,14 +145,22 @@ export default function Login() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Entrez votre mot de passe"
-                      className="pl-10 transition-all focus:ring-blue-500 hover:border-pink-300"
+                      className="pl-10 pr-10 transition-all focus:ring-blue-500 hover:border-pink-300"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </div>

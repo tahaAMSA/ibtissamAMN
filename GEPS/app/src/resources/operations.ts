@@ -7,6 +7,10 @@ import type {
 } from 'wasp/server/operations';
 import type { Resource } from 'wasp/entities';
 import { ResourceType } from '@prisma/client';
+import {
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateResourceInput = {
@@ -57,31 +61,33 @@ export const createResource: CreateResource<CreateResourceInput, Resource> = asy
     throw new HttpError(401, 'Non autorisé');
   }
 
-  // Validation des champs requis
-  if (!args.name || !args.type || args.quantity === undefined || !args.unit) {
-    throw new HttpError(400, 'Les champs nom, type, quantité et unité sont obligatoires');
-  }
+  return withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Validation des champs requis
+    if (!args.name || !args.type || args.quantity === undefined || !args.unit) {
+      throw new HttpError(400, 'Les champs nom, type, quantité et unité sont obligatoires');
+    }
 
-  if (args.quantity < 0) {
-    throw new HttpError(400, 'La quantité ne peut pas être négative');
-  }
+    if (args.quantity < 0) {
+      throw new HttpError(400, 'La quantité ne peut pas être négative');
+    }
 
-  try {
-    return await context.entities.Resource.create({
-      data: {
-        name: args.name.trim(),
-        type: args.type,
-        quantity: args.quantity,
-        unit: args.unit.trim(),
-        module: args.module?.trim(),
-        alertThreshold: args.alertThreshold,
-        isActive: true
-      }
-    });
-  } catch (error) {
-    console.error('Erreur lors de la création de la ressource:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création de la ressource');
-  }
+    try {
+      return await context.entities.Resource.create({
+        data: createWithOrganization(organizationId, {
+          name: args.name.trim(),
+          type: args.type,
+          quantity: args.quantity,
+          unit: args.unit.trim(),
+          module: args.module?.trim(),
+          alertThreshold: args.alertThreshold,
+          isActive: true
+        })
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création de la ressource:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création de la ressource');
+    }
+  });
 };
 
 // Update resource

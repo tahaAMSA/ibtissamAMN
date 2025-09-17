@@ -8,6 +8,10 @@ import type {
   CreateRevenue
 } from 'wasp/server/operations';
 import type { Budget, Expense, Revenue } from 'wasp/entities';
+import { 
+  withOrganizationAccess,
+  createWithOrganization
+} from '../server/multiTenant';
 
 // Types
 type CreateBudgetInput = {
@@ -110,7 +114,8 @@ export const createBudget: CreateBudget<CreateBudgetInput, Budget> = async (args
     throw new HttpError(400, 'Le montant initial doit être positif');
   }
 
-  try {
+  return await withOrganizationAccess(context.user, context, async (organizationId) => {
+    try {
     // Vérifier qu'il n'existe pas déjà un budget pour ce module et cette année
     const existingBudget = await context.entities.Budget.findFirst({
       where: {
@@ -123,39 +128,40 @@ export const createBudget: CreateBudget<CreateBudgetInput, Budget> = async (args
       throw new HttpError(409, 'Un budget existe déjà pour ce module et cette année');
     }
 
-    return await context.entities.Budget.create({
-      data: {
-        module: args.module.trim(),
-        year: args.year,
-        initialAmount: args.initialAmount,
-        usedAmount: 0,
-        description: args.description?.trim(),
-        userId: context.user.id
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true
-          }
-        },
-        _count: {
-          select: {
-            expenses: true,
-            revenues: true
+      return await context.entities.Budget.create({
+        data: createWithOrganization(organizationId, {
+          module: args.module.trim(),
+          year: args.year,
+          initialAmount: args.initialAmount,
+          usedAmount: 0,
+          description: args.description?.trim(),
+          userId: context.user!.id
+        }),
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
+          },
+          _count: {
+            select: {
+              expenses: true,
+              revenues: true
+            }
           }
         }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+      console.error('Erreur lors de la création du budget:', error);
+      throw new HttpError(500, 'Erreur serveur lors de la création du budget');
     }
-    console.error('Erreur lors de la création du budget:', error);
-    throw new HttpError(500, 'Erreur serveur lors de la création du budget');
-  }
+  });
 };
 
 // Update budget

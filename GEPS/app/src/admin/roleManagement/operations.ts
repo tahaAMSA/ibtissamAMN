@@ -12,6 +12,11 @@ import type {
 } from 'wasp/server/operations';
 import type { Role, Permission, User } from 'wasp/entities';
 import { hasPermission } from '../../server/permissions';
+import {
+  withOrganizationAccess,
+  createWithOrganization,
+  addOrganizationFilter
+} from '../../server/multiTenant';
 
 // Types pour les arguments
 type CreateRoleInput = {
@@ -118,42 +123,49 @@ export const createRole: CreateRole<CreateRoleInput, Role> = async (args, contex
     throw new HttpError(401, 'Non autorisé');
   }
 
-  // Vérifier les permissions
-  if (!hasPermission(context.user, 'SYSTEM', 'CREATE')) {
-    throw new HttpError(403, 'Accès refusé');
-  }
-
-  if (!args.name?.trim()) {
-    throw new HttpError(400, 'Le nom du rôle est requis');
-  }
-
-  try {
-    // Vérifier que le nom n'existe pas déjà
-    const existingRole = await context.entities.Role.findUnique({
-      where: { name: args.name.trim() }
-    });
-
-    if (existingRole) {
-      throw new HttpError(400, 'Un rôle avec ce nom existe déjà');
+  return withOrganizationAccess(context.user, context, async (organizationId) => {
+    // Vérifier les permissions
+    if (!hasPermission(context.user!, 'SYSTEM', 'CREATE')) {
+      throw new HttpError(403, 'Accès refusé');
     }
 
-    return await context.entities.Role.create({
-      data: {
-        name: args.name.trim(),
-        description: args.description?.trim()
-      },
-      include: {
-        permissions: true,
-        users: true
+    if (!args.name?.trim()) {
+      throw new HttpError(400, 'Le nom du rôle est requis');
+    }
+
+    try {
+      // Vérifier que le nom n'existe pas déjà dans cette organisation
+      const existingRole = await context.entities.Role.findUnique({
+        where: {
+          organizationId_name: {
+            organizationId: organizationId,
+            name: args.name.trim()
+          }
+        }
+      });
+
+      if (existingRole) {
+        throw new HttpError(400, 'Un rôle avec ce nom existe déjà dans cette organisation');
       }
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      throw error;
+
+      return await context.entities.Role.create({
+        data: createWithOrganization(organizationId, {
+          name: args.name.trim(),
+          description: args.description?.trim()
+        }),
+        include: {
+          permissions: true,
+          users: true
+        }
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      console.error('Erreur lors de la création du rôle:', error);
+      throw new HttpError(500, 'Erreur serveur');
     }
-    console.error('Erreur lors de la création du rôle:', error);
-    throw new HttpError(500, 'Erreur serveur');
-  }
+  });
 };
 
 // Mettre à jour un rôle
@@ -181,14 +193,19 @@ export const updateRole: UpdateRole<UpdateRoleInput, Role> = async (args, contex
       throw new HttpError(404, 'Rôle non trouvé');
     }
 
-    // Si le nom change, vérifier qu'il n'existe pas déjà
+    // Si le nom change, vérifier qu'il n'existe pas déjà dans cette organisation
     if (args.name && args.name !== existingRole.name) {
       const roleWithSameName = await context.entities.Role.findUnique({
-        where: { name: args.name.trim() }
+        where: {
+          organizationId_name: {
+            organizationId: existingRole.organizationId,
+            name: args.name.trim()
+          }
+        }
       });
 
       if (roleWithSameName) {
-        throw new HttpError(400, 'Un rôle avec ce nom existe déjà');
+        throw new HttpError(400, 'Un rôle avec ce nom existe déjà dans cette organisation');
       }
     }
 
