@@ -641,13 +641,26 @@ const Sidebar = memo(function Sidebar({
   return (
     <TooltipProvider>
       <div className={sidebarClasses}>
-        {/* Header moderne avec dégradé subtil */}
-        <div className="flex items-center justify-between h-14 px-4 bg-gradient-to-r from-blue-600 to-pink-600 text-white border-b border-blue-200/30">
+        {/* Header moderne avec logo */}
+        <div className="flex items-center justify-between h-20 px-4 bg-white border-b border-gray-200">
           {!isCollapsed && (
             <div className="flex items-center min-w-0 flex-1">
-              <h1 className="text-lg font-bold truncate">
-                {language === 'ar' ? 'مؤسسة ابتسامة العصرة' : 'GEPS'}
-              </h1>
+              <img 
+                src="/logo-GEPS.png" 
+                alt="GEPS Logo" 
+                className="h-16 w-auto"
+              />
+            </div>
+          )}
+          
+          {/* Logo version réduite pour sidebar collapsed */}
+          {isCollapsed && (
+            <div className="flex items-center justify-center w-full">
+              <img 
+                src="/logo-GEPS.png" 
+                alt="GEPS Logo" 
+                className="h-12 w-auto"
+              />
             </div>
           )}
           
@@ -657,7 +670,7 @@ const Sidebar = memo(function Sidebar({
               variant="ghost"
               size="icon"
               onClick={handleToggleCollapse}
-              className="hidden lg:flex text-white hover:bg-white/20 h-8 w-8"
+              className="hidden lg:flex text-gray-600 hover:bg-gray-100 h-8 w-8"
             >
               {isCollapsed ? 
                 (isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />) :
@@ -670,7 +683,7 @@ const Sidebar = memo(function Sidebar({
               variant="ghost"
               size="icon"
               onClick={handleClose}
-              className="lg:hidden text-white hover:bg-white/20 h-8 w-8"
+              className="lg:hidden text-gray-600 hover:bg-gray-100 h-8 w-8"
             >
               <X className="w-4 h-4" />
             </Button>
