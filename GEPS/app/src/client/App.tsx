@@ -4,6 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { routes } from 'wasp/client/router';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from 'wasp/client/auth';
+import { getUserLanguage, convertDatabaseLanguage, type Language } from '../translations/utils';
 
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
@@ -19,8 +20,16 @@ export default function App() {
   const { data: user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const [language, setLanguage] = useState<Language>('fr');
   const [isMobile, setIsMobile] = useState(false);
+
+  // Synchroniser la langue avec les préférences utilisateur
+  useEffect(() => {
+    if (user && (user as any).preferredLanguage) {
+      const userLang = getUserLanguage(user as any);
+      setLanguage(userLang);
+    }
+  }, [user]);
 
   // Détection de la taille d'écran
   useEffect(() => {
@@ -56,6 +65,8 @@ export default function App() {
   const isRTL = language === 'ar';
 
   const toggleLanguage = () => {
+    // Cette fonction n'est plus nécessaire car la langue est gérée par LanguageSelector
+    // qui met à jour directement la base de données
     setLanguage(lang => lang === 'fr' ? 'ar' : 'fr');
   };
 

@@ -1,5 +1,6 @@
 // Types pour l'internationalisation
 export type Language = 'fr' | 'ar';
+export type DatabaseLanguage = 'FR' | 'AR';
 
 export interface Translations {
   [key: string]: {
@@ -23,6 +24,120 @@ export const translations: Translations = {
   'nav.account': {
     fr: 'Mon compte',
     ar: 'حسابي'
+  },
+  
+  // ========================================
+  // DASHBOARD
+  // ========================================
+  'dashboard.title': {
+    fr: 'Tableau de Bord - GEPS',
+    ar: 'لوحة التحكم - GEPS'
+  },
+  'dashboard.welcome': {
+    fr: 'Bienvenue dans le système de gestion GEPS',
+    ar: 'مرحباً بك في نظام إدارة GEPS'
+  },
+  'dashboard.overview': {
+    fr: 'Vue d\'ensemble',
+    ar: 'نظرة عامة'
+  },
+  'dashboard.quickActions': {
+    fr: 'Actions rapides',
+    ar: 'إجراءات سريعة'
+  },
+  'dashboard.recentActivity': {
+    fr: 'Activité récente',
+    ar: 'النشاط الأخير'
+  },
+  'dashboard.alerts': {
+    fr: 'Alertes',
+    ar: 'التنبيهات'
+  },
+  'dashboard.reports': {
+    fr: 'Rapports',
+    ar: 'التقارير'
+  },
+  'dashboard.statistics': {
+    fr: 'Statistiques',
+    ar: 'الإحصائيات'
+  },
+  
+  // Périodes
+  'period.today': {
+    fr: 'Aujourd\'hui',
+    ar: 'اليوم'
+  },
+  'period.week': {
+    fr: 'Cette semaine',
+    ar: 'هذا الأسبوع'
+  },
+  'period.month': {
+    fr: 'Ce mois',
+    ar: 'هذا الشهر'
+  },
+  'period.year': {
+    fr: 'Cette année',
+    ar: 'هذا العام'
+  },
+  
+  // Stats du dashboard
+  'stats.totalBeneficiaries': {
+    fr: 'Total bénéficiaires',
+    ar: 'إجمالي المستفيدين'
+  },
+  'stats.activeBeneficiaries': {
+    fr: 'Bénéficiaires actifs',
+    ar: 'المستفيدون النشطون'
+  },
+  'stats.totalDocuments': {
+    fr: 'Total documents',
+    ar: 'إجمالي الوثائق'
+  },
+  'stats.activeStays': {
+    fr: 'Séjours actifs',
+    ar: 'الإقامات النشطة'
+  },
+  'stats.pendingInterventions': {
+    fr: 'Interventions en attente',
+    ar: 'التدخلات المعلقة'
+  },
+  'stats.completedActivities': {
+    fr: 'Activités terminées',
+    ar: 'الأنشطة المكتملة'
+  },
+  'stats.monthlyBudget': {
+    fr: 'Budget mensuel',
+    ar: 'ميزانية الشهر'
+  },
+  'stats.monthlyExpenses': {
+    fr: 'Dépenses mensuelles',
+    ar: 'مصروفات الشهر'
+  },
+  
+  // Actions du dashboard
+  'dashboard.action.addBeneficiary': {
+    fr: 'Ajouter bénéficiaire',
+    ar: 'إضافة مستفيد'
+  },
+  'dashboard.action.createDocument': {
+    fr: 'Créer document',
+    ar: 'إنشاء وثيقة'
+  },
+  'dashboard.action.scheduleIntervention': {
+    fr: 'Programmer intervention',
+    ar: 'جدولة تدخل'
+  },
+  'dashboard.action.manageAccommodation': {
+    fr: 'Gérer hébergement',
+    ar: 'إدارة الإيواء'
+  },
+  'dashboard.action.addActivity': {
+    fr: 'Ajouter activité',
+    ar: 'إضافة نشاط'
+  },
+  'dashboard.action.manageBudget': {
+    fr: 'Gérer budget',
+    ar: 'إدارة الميزانية'
   },
   'nav.logout': {
     fr: 'Déconnexion',
@@ -152,13 +267,505 @@ export const translations: Translations = {
     fr: 'Statut',
     ar: 'الحالة'
   },
+  'beneficiary.inactive': {
+    fr: 'Inactif',
+    ar: 'غير نشط'
+  },
+  'beneficiary.none.found': {
+    fr: 'Aucun bénéficiaire trouvé',
+    ar: 'لا توجد مستفيدات'
+  },
+  'beneficiary.add.first': {
+    fr: 'Commencez par ajouter votre premier bénéficiaire',
+    ar: 'ابدأ بإضافة أول مستفيد'
+  },
+  'beneficiary.protection.child': {
+    fr: 'Protection de l\'enfance',
+    ar: 'حماية الأطفال'
+  },
+  'beneficiary.protection.child.desc': {
+    fr: 'Enfants victimes de violence ou en situation de danger',
+    ar: 'الأطفال ضحايا العنف أو في وضعيات خطر'
+  },
+  'beneficiary.search.placeholder': {
+    fr: 'Rechercher par nom, téléphone ou adresse...',
+    ar: 'البحث باسم، هاتف أو عنوان...'
+  },
+  'beneficiary.filter.allTypes': {
+    fr: 'Tous types',
+    ar: 'جميع الأنواع'
+  },
+  'beneficiary.filter.women': {
+    fr: '👩 Femmes',
+    ar: '👩 النساء'
+  },
+  'beneficiary.filter.children': {
+    fr: '🧒 Enfants',
+    ar: '🧒 الأطفال'
+  },
+  'beneficiary.confirmDelete': {
+    fr: 'Êtes-vous sûr de vouloir supprimer ce bénéficiaire ?',
+    ar: 'هل أنت متأكد من حذف هذا المستفيد؟'
+  },
+
+  // ========================================
+  // BENEFICIAIRES - COMPOSANTS DÉTAILLÉS
+  // ========================================
+  
+  // AssignmentModal
+  'assignment.title': {
+    fr: 'Assigner le dossier',
+    ar: 'تعيين الملف'
+  },
+  'assignment.beneficiaryInfo': {
+    fr: 'Informations du bénéficiaire',
+    ar: 'معلومات المستفيد'
+  },
+  'assignment.selectAssistant': {
+    fr: 'Sélectionner une assistante sociale',
+    ar: 'اختر مساعدة اجتماعية'
+  },
+  'assignment.reason': {
+    fr: 'Raison de l\'assignation (optionnel)',
+    ar: 'سبب التعيين (اختياري)'
+  },
+  'assignment.assign': {
+    fr: 'Assigner',
+    ar: 'تعيين'
+  },
+  'assignment.assigning': {
+    fr: 'Assignation...',
+    ar: 'جاري التعيين...'
+  },
+  'assignment.pleaseSelect': {
+    fr: 'Veuillez sélectionner une assistante sociale',
+    ar: 'يرجى اختيار مساعدة اجتماعية'
+  },
+  'assignment.success': {
+    fr: 'Dossier assigné avec succès !',
+    ar: 'تم تعيين الملف بنجاح!'
+  },
+  'assignment.currentStatus': {
+    fr: 'Statut actuel',
+    ar: 'الحالة الحالية'
+  },
+  'assignment.noAssistants': {
+    fr: 'Aucune assistante sociale disponible',
+    ar: 'لا توجد مساعدات اجتماعيات متاحات'
+  },
+  'assignment.choose': {
+    fr: 'Choisir une assistante sociale...',
+    ar: 'اختر مساعدة اجتماعية...'
+  },
+  'assignment.reasonPlaceholder': {
+    fr: 'Pourquoi assigner ce dossier à cette assistante sociale ?',
+    ar: 'لماذا تعين هذا الملف لهذه المساعدة الاجتماعية؟'
+  },
+  'assignment.assignTo': {
+    fr: 'Assigner à une assistante sociale',
+    ar: 'تعيين إلى مساعدة اجتماعية'
+  },
+
+  // BeneficiaryCard
+  'beneficiary.age': {
+    fr: 'Âge',
+    ar: 'العمر'
+  },
+  'beneficiary.male': {
+    fr: 'Homme',
+    ar: 'ذكر'
+  },
+  'beneficiary.female': {
+    fr: 'Femme',
+    ar: 'أنثى'
+  },
+  'beneficiary.view': {
+    fr: 'Voir',
+    ar: 'عرض'
+  },
+  'beneficiary.assign': {
+    fr: 'Assigner',
+    ar: 'تعيين'
+  },
+  'beneficiary.documents': {
+    fr: 'Documents',
+    ar: 'الوثائق'
+  },
+  'beneficiary.accommodation': {
+    fr: 'Hébergement',
+    ar: 'الإيواء'
+  },
+  'beneficiary.years': {
+    fr: 'ans',
+    ar: 'سنة'
+  },
+  'beneficiary.woman': {
+    fr: 'Femme',
+    ar: 'امرأة'
+  },
+  'beneficiary.child': {
+    fr: 'Enfant',
+    ar: 'طفل'
+  },
   'beneficiary.active': {
     fr: 'Actif',
     ar: 'نشط'
   },
-  'beneficiary.inactive': {
-    fr: 'Inactif',
-    ar: 'غير نشط'
+
+  // BeneficiaryDetailHeader
+  'beneficiary.back': {
+    fr: 'Retour',
+    ar: 'رجوع'
+  },
+  'beneficiary.personalInfo': {
+    fr: 'Informations personnelles',
+    ar: 'المعلومات الشخصية'
+  },
+
+  // BeneficiaryFilters
+  'filters.search': {
+    fr: 'Rechercher...',
+    ar: 'البحث...'
+  },
+  'filters.filter': {
+    fr: 'Filtrer',
+    ar: 'تصفية'
+  },
+  'filters.clearFilters': {
+    fr: 'Effacer les filtres',
+    ar: 'مسح المرشحات'
+  },
+  'filters.all': {
+    fr: 'Tous',
+    ar: 'الكل'
+  },
+  'filters.beneficiaryType': {
+    fr: 'Type de bénéficiaire',
+    ar: 'نوع المستفيد'
+  },
+  'filters.women': {
+    fr: 'Femmes',
+    ar: 'النساء'
+  },
+  'filters.children': {
+    fr: 'Enfants',
+    ar: 'الأطفال'
+  },
+  'filters.gender': {
+    fr: 'Genre',
+    ar: 'الجنس'
+  },
+  'filters.ageRange': {
+    fr: 'Tranche d\'âge',
+    ar: 'الفئة العمرية'
+  },
+  'filters.city': {
+    fr: 'Ville',
+    ar: 'المدينة'
+  },
+  'filters.status': {
+    fr: 'Statut',
+    ar: 'الحالة'
+  },
+  'filters.results': {
+    fr: 'résultats',
+    ar: 'نتيجة'
+  },
+  'filters.showing': {
+    fr: 'Affichage de',
+    ar: 'عرض'
+  },
+  'filters.childrenAge': {
+    fr: 'Enfants (0-17)',
+    ar: 'أطفال (0-17)'
+  },
+  'filters.adults': {
+    fr: 'Adultes (18-64)',
+    ar: 'بالغون (18-64)'
+  },
+  'filters.seniors': {
+    fr: 'Seniors (65+)',
+    ar: 'كبار السن (65+)'
+  },
+  'filters.casablanca': {
+    fr: 'Casablanca',
+    ar: 'الدار البيضاء'
+  },
+  'filters.rabat': {
+    fr: 'Rabat',
+    ar: 'الرباط'
+  },
+  'filters.marrakech': {
+    fr: 'Marrakech',
+    ar: 'مراكش'
+  },
+  'filters.fes': {
+    fr: 'Fès',
+    ar: 'فاس'
+  },
+  'filters.filtersActive': {
+    fr: 'filtres actifs',
+    ar: 'مرشح نشط'
+  },
+  'filters.beneficiariesTitle': {
+    fr: 'Filtrer les bénéficiaires',
+    ar: 'تصفية المستفيدين'
+  },
+
+  // BeneficiaryHeader
+  'beneficiary.management': {
+    fr: 'Gestion des Bénéficiaires',
+    ar: 'إدارة المستفيدين'
+  },
+  'beneficiary.managementSubtitle': {
+    fr: 'Gestion complète des dossiers bénéficiaires et services fournis',
+    ar: 'إدارة شاملة لملفات المستفيدين والخدمات المقدمة'
+  },
+  'beneficiary.addWoman': {
+    fr: 'Fiche bénéficiaire détaillée',
+    ar: 'فيش مستفيدة مفصلة'
+  },
+  'beneficiary.addChildProtection': {
+    fr: 'Unité Protection Enfance',
+    ar: 'وحدة حماية الطفولة'
+  },
+  'beneficiary.addSimpleAccueil': {
+    fr: 'Enregistrement Accueil',
+    ar: 'تسجيل الاستقبال'
+  },
+  'beneficiary.totalBeneficiaries': {
+    fr: 'Total bénéficiaires',
+    ar: 'إجمالي المستفيدين'
+  },
+  'beneficiary.activeBeneficiaries': {
+    fr: 'Bénéficiaires actifs',
+    ar: 'المستفيدون النشطون'
+  },
+  'beneficiary.newThisMonth': {
+    fr: 'Nouveaux ce mois',
+    ar: 'جديد هذا الشهر'
+  },
+  'beneficiary.integratedSystem': {
+    fr: 'Système de gestion intégré',
+    ar: 'نظام إدارة شامل'
+  },
+  'beneficiary.reception': {
+    fr: 'استقبال',
+    ar: 'Accueil'
+  },
+  'beneficiary.women18Plus': {
+    fr: 'Femmes 18+',
+    ar: 'نساء 18+'
+  },
+  'beneficiary.children0to17': {
+    fr: 'Enfants 0-17',
+    ar: 'أطفال 0-17'
+  },
+
+  // BeneficiaryLifecycle
+  'lifecycle.title': {
+    fr: 'Cycle de vie du dossier',
+    ar: 'دورة حياة الملف'
+  },
+  'lifecycle.reception': {
+    fr: 'Accueil',
+    ar: 'الاستقبال'
+  },
+  'lifecycle.orientation': {
+    fr: 'Orientation',
+    ar: 'التوجيه'
+  },
+  'lifecycle.assignment': {
+    fr: 'Assignation',
+    ar: 'التعيين'
+  },
+  'lifecycle.processing': {
+    fr: 'Traitement',
+    ar: 'المعالجة'
+  },
+  'lifecycle.by': {
+    fr: 'Par',
+    ar: 'بواسطة'
+  },
+  'lifecycle.on': {
+    fr: 'Le',
+    ar: 'في'
+  },
+  'lifecycle.reason': {
+    fr: 'Raison',
+    ar: 'السبب'
+  },
+  'lifecycle.pending': {
+    fr: 'En attente',
+    ar: 'في الانتظار'
+  },
+  'lifecycle.completed': {
+    fr: 'Terminé',
+    ar: 'مكتمل'
+  },
+  'lifecycle.inProgress': {
+    fr: 'En cours',
+    ar: 'قيد التنفيذ'
+  },
+  'lifecycle.initialRegistration': {
+    fr: 'Enregistrement initial',
+    ar: 'التسجيل الأولي'
+  },
+  'lifecycle.pendingOrientation': {
+    fr: 'En attente d\'orientation',
+    ar: 'في انتظار التوجيه'
+  },
+  'lifecycle.assignedToSocialWorker': {
+    fr: 'Assigné à une assistante sociale',
+    ar: 'مُعين لمساعدة اجتماعية'
+  },
+  'lifecycle.protectionChild': {
+    fr: 'Protection Enfance',
+    ar: 'حماية الطفولة'
+  },
+  'lifecycle.supportWomen': {
+    fr: 'Accompagnement Femmes',
+    ar: 'مرافقة النساء'
+  },
+
+  // Status labels
+  'status.waitingReception': {
+    fr: 'En attente d\'accueil',
+    ar: 'في انتظار الاستقبال'
+  },
+  'status.waitingOrientation': {
+    fr: 'En attente d\'orientation',
+    ar: 'في انتظار التوجيه'
+  },
+  'status.oriented': {
+    fr: 'Orienté',
+    ar: 'موجه'
+  },
+  'status.inSupport': {
+    fr: 'En suivi',
+    ar: 'تحت المتابعة'
+  },
+  'status.finished': {
+    fr: 'Terminé',
+    ar: 'مكتمل'
+  },
+
+  // BeneficiaryStats
+  'stats.title': {
+    fr: 'Statistiques',
+    ar: 'الإحصائيات'
+  },
+  'stats.activities': {
+    fr: 'Activités',
+    ar: 'الأنشطة'
+  },
+  'stats.projects': {
+    fr: 'Projets',
+    ar: 'المشاريع'
+  },
+  'stats.education': {
+    fr: 'Éducation',
+    ar: 'التعليم'
+  },
+  'stats.interventions': {
+    fr: 'Interventions',
+    ar: 'التدخلات'
+  },
+
+  // DashboardPanel
+  'dashboard.women': {
+    fr: 'Femmes',
+    ar: 'النساء'
+  },
+  'dashboard.children': {
+    fr: 'Enfants',
+    ar: 'الأطفال'
+  },
+  'dashboard.pendingOrientation': {
+    fr: 'En attente d\'orientation',
+    ar: 'في انتظار التوجيه'
+  },
+  'dashboard.activeSupport': {
+    fr: 'En suivi actif',
+    ar: 'في المتابعة'
+  },
+  'dashboard.thisMonth': {
+    fr: 'Ce mois-ci',
+    ar: 'هذا الشهر'
+  },
+  'dashboard.womenSupport': {
+    fr: 'Accompagnement femmes',
+    ar: 'دعم النساء'
+  },
+  'dashboard.childProtection': {
+    fr: 'Protection enfance',
+    ar: 'حماية الطفولة'
+  },
+  'dashboard.orientationNeeded': {
+    fr: 'Nécessite orientation',
+    ar: 'تحتاج توجيه'
+  },
+  'dashboard.newArrivals': {
+    fr: 'Nouvelles arrivées',
+    ar: 'وافدون جدد'
+  },
+  'dashboard.pendingOrientationAlert': {
+    fr: 'bénéficiaire en attente d\'orientation',
+    ar: 'مستفيد في انتظار التوجيه'
+  },
+  'dashboard.pendingOrientationAlertPlural': {
+    fr: 'bénéficiaires en attente d\'orientation',
+    ar: 'مستفيد في انتظار التوجيه'
+  },
+  'dashboard.orientationInstruction': {
+    fr: 'Ils doivent être orientés vers les assistantes sociales appropriées',
+    ar: 'يجب توجيههم إلى المساعدات الاجتماعيات المناسبات'
+  },
+  'dashboard.orientationModeActive': {
+    fr: 'Mode orientation actif',
+    ar: 'وضع التوجيه النشط'
+  },
+  'dashboard.orientationModeDescription': {
+    fr: 'Seuls les bénéficiaires nécessitant une orientation sont affichés',
+    ar: 'يتم عرض المستفيدين الذين يحتاجون إلى توجيه فقط'
+  },
+
+  // Général pour les composants
+  'general.name': {
+    fr: 'Nom',
+    ar: 'الاسم'
+  },
+  'general.firstName': {
+    fr: 'Prénom',
+    ar: 'الاسم الأول'
+  },
+  'general.lastName': {
+    fr: 'Nom de famille',
+    ar: 'اسم العائلة'
+  },
+  'general.fullName': {
+    fr: 'Nom complet',
+    ar: 'الاسم الكامل'
+  },
+  'general.phone': {
+    fr: 'Téléphone',
+    ar: 'الهاتف'
+  },
+  'general.address': {
+    fr: 'Adresse',
+    ar: 'العنوان'
+  },
+  'general.visitReason': {
+    fr: 'Motif de visite',
+    ar: 'سبب الزيارة'
+  },
+  'general.familySituation': {
+    fr: 'Situation familiale',
+    ar: 'الوضعية العائلية'
+  },
+  'general.professionalSituation': {
+    fr: 'Situation professionnelle',
+    ar: 'الوضعية المهنية'
   },
 
   // ========================================

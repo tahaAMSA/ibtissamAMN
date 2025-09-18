@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useI18n } from './useI18n';
-import { type Language } from './index';
+import { type Language, type DatabaseLanguage } from './index';
 
 // Type pour l'utilisateur avec propriété lang
 interface User {
   id: string;
   email: string;
-  lang?: Language;
+  preferredLanguage?: DatabaseLanguage;
 }
 
 // Exemple de composant utilisant l'internationalisation
@@ -15,7 +15,7 @@ export function BeneficiaryExample() {
   const [user, setUser] = useState<User>({
     id: '1',
     email: 'user@example.com',
-    lang: 'fr'
+    preferredLanguage: 'FR'
   });
 
   // Utilisation du hook d'internationalisation
@@ -23,7 +23,7 @@ export function BeneficiaryExample() {
 
   // Fonction pour changer la langue
   const changeLanguage = (newLang: Language) => {
-    setUser(prev => ({ ...prev, lang: newLang }));
+    setUser(prev => ({ ...prev, preferredLanguage: newLang.toUpperCase() as DatabaseLanguage }));
   };
 
   return (
@@ -36,7 +36,7 @@ export function BeneficiaryExample() {
         <button
           onClick={() => changeLanguage('fr')}
           className={`px-3 py-1 rounded ${
-            user.lang === 'fr' 
+            user.preferredLanguage === 'FR' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
@@ -46,7 +46,7 @@ export function BeneficiaryExample() {
         <button
           onClick={() => changeLanguage('ar')}
           className={`px-3 py-1 rounded ${
-            user.lang === 'ar' 
+            user.preferredLanguage === 'AR' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}

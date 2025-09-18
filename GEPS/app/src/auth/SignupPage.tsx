@@ -19,6 +19,7 @@ interface SignupFormData {
   phone?: string;
   dateOfBirth?: string;
   avatar?: string;
+  preferredLanguage?: 'FR' | 'AR';
 }
 
 interface SignupData {
@@ -33,6 +34,7 @@ interface SignupData {
   phone: string;
   dateOfBirth: Date | undefined;
   avatar: string;
+  preferredLanguage: 'FR' | 'AR';
   isAdmin: boolean;
   status: 'PENDING_APPROVAL' | 'APPROVED';
 }
@@ -50,6 +52,7 @@ export function Signup() {
     phone: '',
     dateOfBirth: '',
     avatar: '',
+    preferredLanguage: 'FR',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +77,7 @@ export function Signup() {
         phone: formData.phone || '',
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
         avatar: formData.avatar || '',
+        preferredLanguage: formData.preferredLanguage || 'FR',
         isAdmin: false,
         status: 'PENDING_APPROVAL',
       };
@@ -330,7 +334,7 @@ export function Signup() {
                 </div>
 
                 {/* Informations supplémentaires */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
                       Sexe *
@@ -374,6 +378,21 @@ export function Signup() {
                       onChange={handleChange}
                       className="transition-all focus:ring-blue-500 hover:border-pink-300"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="preferredLanguage" className="text-sm font-medium text-gray-700">
+                      Langue préférée *
+                    </Label>
+                    <Select value={formData.preferredLanguage || 'FR'} onValueChange={(value) => setFormData(prev => ({ ...prev, preferredLanguage: value as 'FR' | 'AR' }))}>
+                      <SelectTrigger className="transition-all focus:ring-blue-500 hover:border-pink-300">
+                        <SelectValue placeholder="Choisir..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FR">🇫🇷 Français</SelectItem>
+                        <SelectItem value="AR">🇸🇦 العربية</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

@@ -1,8 +1,9 @@
 import type { User } from 'wasp/entities';
-import { UserRole, Gender } from '@prisma/client';
+import { UserRole, Gender, Language } from '@prisma/client';
 import { logout } from 'wasp/client/auth';
 import { RoleInfo } from '../client/components/ui/RoleInfo';
 import { usePermissions } from '../client/hooks/usePermissions';
+import LanguageSelector from '../client/components/LanguageSelector';
 
 export default function AccountPage({ user }: { user: User }) {
   const { getRoleLabel } = usePermissions();
@@ -22,6 +23,14 @@ export default function AccountPage({ user }: { user: User }) {
       case 'FEMME': return 'Femme';
       case 'AUTRE': return 'Autre';
       default: return null;
+    }
+  };
+
+  const getLanguageLabel = (language: Language | null) => {
+    switch (language) {
+      case 'FR': return '🇫🇷 Français';
+      case 'AR': return '🇸🇦 العربية';
+      default: return '🇫🇷 Français';
     }
   };
 
@@ -136,6 +145,21 @@ export default function AccountPage({ user }: { user: User }) {
                 </dd>
               </div>
             )}
+
+            {/* Langue préférée */}
+            <div className='py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6'>
+              <dt className='text-sm font-medium text-gray-500 dark:text-white'>Langue préférée</dt>
+              <dd className='mt-1 text-sm text-gray-900 dark:text-gray-400 sm:col-span-2 sm:mt-0'>
+                <div className="flex items-center gap-4">
+                  <span>{getLanguageLabel((user as any).preferredLanguage)}</span>
+                  <LanguageSelector 
+                    showLabel={false} 
+                    size="sm" 
+                    className="ml-auto"
+                  />
+                </div>
+              </dd>
+            </div>
           </dl>
         </div>
       </div>

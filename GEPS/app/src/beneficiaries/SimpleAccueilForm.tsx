@@ -149,25 +149,30 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <CardHeader className="bg-blue-50">
+    <Card className="w-full max-w-3xl mx-auto shadow-2xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <UserCheck className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-3 text-white text-xl">
+              <div className="p-2 bg-white/20 rounded-full">
+                <UserCheck className="h-6 w-6" />
+              </div>
               {t.title}
             </CardTitle>
-            <p className="text-sm text-blue-600">
+            <p className="text-green-100 mt-2">
               {t.subtitle}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLanguage(language === 'fr' ? 'ar' : 'fr')}
-          >
-            {language === 'fr' ? 'العربية' : 'Français'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLanguage(language === 'fr' ? 'ar' : 'fr')}
+              className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-green-700"
+            >
+              {language === 'fr' ? 'العربية' : 'Français'}
+            </Button>
+          </div>
         </div>
       </CardHeader>
 

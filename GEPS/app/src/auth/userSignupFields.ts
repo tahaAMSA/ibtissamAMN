@@ -16,6 +16,7 @@ const emailDataSchema = z.object({
   phone: z.string().optional(),
   dateOfBirth: z.string().optional(), // Will be converted to DateTime
   avatar: z.string().optional(),
+  preferredLanguage: z.enum(['FR', 'AR']).optional(),
 });
 
 export const getEmailUserFields = defineUserSignupFields({
@@ -58,6 +59,10 @@ export const getEmailUserFields = defineUserSignupFields({
   avatar: (data) => {
     const emailData = emailDataSchema.parse(data);
     return emailData.avatar;
+  },
+  preferredLanguage: (data) => {
+    const emailData = emailDataSchema.parse(data);
+    return emailData.preferredLanguage || 'FR'; // Par défaut français
   },
   isAdmin: (data) => {
     const emailData = emailDataSchema.parse(data);

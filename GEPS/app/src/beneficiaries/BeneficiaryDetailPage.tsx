@@ -24,6 +24,8 @@ import {
   Shield,
   Info
 } from 'lucide-react';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../translations/useI18n';
 
 // Plus d'imports de composants complexes
 import { Card, CardContent, CardHeader, CardTitle } from '../client/components/ui/card';
@@ -38,70 +40,14 @@ import ChildProtectionForm from './ChildProtectionForm';
 const BeneficiaryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
   const [activeTab, setActiveTab] = useState('overview');
   const [showEditForm, setShowEditForm] = useState(false);
   const [showChildForm, setShowChildForm] = useState(false);
 
   const { data: beneficiary, isLoading, error, refetch } = useQuery(getBeneficiaryById, { id: id! });
 
-  const isRTL = language === 'ar';
-
-  // Traductions
-  const t = {
-    back: language === 'ar' ? 'رجوع' : 'Retour',
-    edit: language === 'ar' ? 'تحرير' : 'Modifier',
-    overview: language === 'ar' ? 'نظرة عامة' : 'Vue d\'ensemble',
-    documents: language === 'ar' ? 'الوثائق' : 'Documents',
-    accommodation: language === 'ar' ? 'الإيواء' : 'Hébergement',
-    meals: language === 'ar' ? 'الوجبات' : 'Repas',
-    activities: language === 'ar' ? 'الأنشطة' : 'Activités',
-    projects: language === 'ar' ? 'المشاريع' : 'Projets',
-    education: language === 'ar' ? 'التعليم' : 'Éducation',
-    personalInfo: language === 'ar' ? 'المعلومات الشخصية' : 'Informations personnelles',
-    firstName: language === 'ar' ? 'الاسم الأول' : 'Prénom',
-    lastName: language === 'ar' ? 'اسم العائلة' : 'Nom de famille',
-    gender: language === 'ar' ? 'الجنس' : 'Genre',
-    dateOfBirth: language === 'ar' ? 'تاريخ الميلاد' : 'Date de naissance',
-    age: language === 'ar' ? 'العمر' : 'Âge',
-    phone: language === 'ar' ? 'الهاتف' : 'Téléphone',
-    address: language === 'ar' ? 'العنوان' : 'Adresse',
-    familySituation: language === 'ar' ? 'الوضع العائلي' : 'Situation familiale',
-    professionalSituation: language === 'ar' ? 'الوضع المهني' : 'Situation professionnelle',
-    male: language === 'ar' ? 'ذكر' : 'Homme',
-    female: language === 'ar' ? 'أنثى' : 'Femme',
-    loading: language === 'ar' ? 'جاري التحميل...' : 'Chargement...',
-    notFound: language === 'ar' ? 'المستفيد غير موجود' : 'Bénéficiaire non trouvé',
-    type: language === 'ar' ? 'النوع' : 'Type',
-    status: language === 'ar' ? 'الحالة' : 'Statut',
-    date: language === 'ar' ? 'التاريخ' : 'Date',
-    author: language === 'ar' ? 'الكاتب' : 'Auteur',
-    dormitory: language === 'ar' ? 'المهجع' : 'Dortoir',
-    bed: language === 'ar' ? 'السرير' : 'Lit',
-    checkIn: language === 'ar' ? 'تاريخ الدخول' : 'Date d\'entrée',
-    checkOut: language === 'ar' ? 'تاريخ الخروج' : 'Date de sortie',
-    current: language === 'ar' ? 'حالي' : 'Actuel',
-    menu: language === 'ar' ? 'القائمة' : 'Menu',
-    preferences: language === 'ar' ? 'التفضيلات' : 'Préférences',
-    quantity: language === 'ar' ? 'الكمية' : 'Quantité',
-    title: language === 'ar' ? 'العنوان' : 'Titre',
-    category: language === 'ar' ? 'الفئة' : 'Catégorie',
-    participation: language === 'ar' ? 'المشاركة' : 'Participation',
-    present: language === 'ar' ? 'حاضر' : 'Présent',
-    absent: language === 'ar' ? 'غائب' : 'Absent',
-    description: language === 'ar' ? 'الوصف' : 'Description',
-    idea: language === 'ar' ? 'الفكرة' : 'Idée',
-    progress: language === 'ar' ? 'التقدم' : 'Progression',
-    budget: language === 'ar' ? 'الميزانية' : 'Budget',
-    institution: language === 'ar' ? 'المؤسسة' : 'Établissement',
-    level: language === 'ar' ? 'المستوى' : 'Niveau',
-    year: language === 'ar' ? 'السنة' : 'Année',
-    results: language === 'ar' ? 'النتائج' : 'Résultats',
-    support: language === 'ar' ? 'الدعم' : 'Soutien',
-    active: language === 'ar' ? 'نشط' : 'Actif',
-    inactive: language === 'ar' ? 'غير نشط' : 'Inactif',
-    noData: language === 'ar' ? 'لا توجد بيانات' : 'Aucune donnée disponible'
-  };
 
   const calculateAge = (dateOfBirth: string | Date) => {
     const birth = new Date(dateOfBirth);
@@ -136,13 +82,13 @@ const BeneficiaryDetailPage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: t.overview, icon: User, count: undefined },
-    { id: 'documents', label: t.documents, icon: FileText, count: 0 },
-    { id: 'accommodation', label: t.accommodation, icon: Home, count: 0 },
-    { id: 'meals', label: t.meals, icon: Utensils, count: 0 },
-    { id: 'activities', label: t.activities, icon: Activity, count: 0 },
-    { id: 'projects', label: t.projects, icon: Lightbulb, count: 0 },
-    { id: 'education', label: t.education, icon: GraduationCap, count: 0 }
+    { id: 'overview', label: t('dashboard.overview'), icon: User, count: undefined },
+    { id: 'documents', label: t('beneficiary.documents'), icon: FileText, count: 0 },
+    { id: 'accommodation', label: t('beneficiary.accommodation'), icon: Home, count: 0 },
+    { id: 'meals', label: 'Repas', icon: Utensils, count: 0 },
+    { id: 'activities', label: t('stats.activities'), icon: Activity, count: 0 },
+    { id: 'projects', label: t('stats.projects'), icon: Lightbulb, count: 0 },
+    { id: 'education', label: t('stats.education'), icon: GraduationCap, count: 0 }
   ];
 
   if (isLoading) {
@@ -184,124 +130,143 @@ const BeneficiaryDetailPage: React.FC = () => {
   }
 
   return (
-    <div className={`space-y-8 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header personnalisé avec navigation - COULEURS DIFFÉRENTES SELON LE TYPE */}
-      <div className={`${
-        isChildBeneficiary(beneficiary) 
-          ? 'bg-gradient-to-r from-orange-500 to-orange-700' 
-          : 'bg-gradient-to-r from-blue-600 to-blue-800'
-      } text-white p-6 rounded-xl shadow-lg`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/beneficiaries')}
-              className={`text-white ${
-                isChildBeneficiary(beneficiary) 
-                  ? 'hover:bg-orange-400 hover:text-white' 
-                  : 'hover:bg-blue-500 hover:text-white'
-              }`}
-            >
-              <ArrowLeft className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {t.back}
-            </Button>
-            
-            {/* Badge du type de bénéficiaire */}
-            <Badge 
-              variant="secondary" 
-              className={`${
-                isChildBeneficiary(beneficiary) 
-                  ? 'bg-orange-100 text-orange-800' 
-                  : 'bg-blue-100 text-blue-800'
-              } font-semibold`}
-            >
-              {isChildBeneficiary(beneficiary) 
-                ? (language === 'ar' ? 'وحدة حماية الطفولة' : 'Protection Enfance')
-                : (language === 'ar' ? 'مستفيدة' : 'Bénéficiaire Femme')
-              }
-            </Badge>
-            
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setLanguage('fr')}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                  language === 'fr' 
-                    ? 'bg-white text-orange-600' 
-                    : isChildBeneficiary(beneficiary) 
-                      ? 'bg-orange-500 text-white hover:bg-orange-400' 
-                      : 'bg-blue-500 text-white hover:bg-blue-400'
-                }`}
-              >
-                FR
-              </button>
-              <button
-                onClick={() => setLanguage('ar')}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                  language === 'ar' 
-                    ? 'bg-white text-orange-600' 
-                    : isChildBeneficiary(beneficiary) 
-                      ? 'bg-orange-500 text-white hover:bg-orange-400' 
-                      : 'bg-blue-500 text-white hover:bg-blue-400'
-                }`}
-              >
-                AR
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (isChildBeneficiary(beneficiary)) {
-                  setShowChildForm(true);
-                } else {
-                  setShowEditForm(true);
-                }
-              }}
-              className={`bg-white ${
-                isChildBeneficiary(beneficiary) 
-                  ? 'text-orange-600 hover:bg-orange-50' 
-                  : 'text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              <Edit className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {t.edit}
-            </Button>
-          </div>
-        </div>
-
-        {/* Informations principales */}
-        <div className="flex items-center space-x-6">
-          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
-            {beneficiary.firstName.charAt(0)}{beneficiary.lastName.charAt(0)}
+    <div className={`space-y-8 ${isRTL ? 'rtl' : 'ltr'}`} dir={dir}>
+      {/* Header amélioré avec design professionnel selon le type */}
+      <Card className="overflow-hidden shadow-2xl">
+        <div className={`${
+          isChildBeneficiary(beneficiary) 
+            ? 'bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700' 
+            : 'bg-gradient-to-br from-pink-500 via-pink-600 to-pink-700'
+        } text-white p-8 relative`}>
+          
+          {/* Motif de fond décoratif */}
+          <div className="absolute inset-0 bg-white/5">
+            <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/10"></div>
+            <div className="absolute bottom-4 left-4 w-20 h-20 rounded-full bg-white/5"></div>
           </div>
           
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">
-              {beneficiary.firstName} {beneficiary.lastName}
-            </h1>
-            
-            <div className="flex items-center space-x-4 text-blue-100">
-              <div className="flex items-center">
-                <Users className="w-4 h-4 mr-2" />
-                <span>{beneficiary.gender === 'Male' ? t.male : t.female}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>{calculateAge(beneficiary.dateOfBirth)} {t.age}</span>
-              </div>
-              {beneficiary.phone && (
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2" />
-                  <span>{beneficiary.phone}</span>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/beneficiaries')}
+                  className={`text-white bg-white/10 border border-white/20 ${
+                    isChildBeneficiary(beneficiary) 
+                      ? 'hover:bg-orange-400 hover:border-orange-300' 
+                      : 'hover:bg-pink-400 hover:border-pink-300'
+                  } backdrop-blur-sm`}
+                >
+                  <ArrowLeft className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                  {t('beneficiary.back')}
+                </Button>
+                
+                {/* Badge amélioré du type de bénéficiaire */}
+                <div className={`${
+                  isChildBeneficiary(beneficiary) 
+                    ? 'bg-orange-100 border-orange-200' 
+                    : 'bg-pink-100 border-pink-200'
+                } px-4 py-2 rounded-full border-2 shadow-lg`}>
+                  <div className="flex items-center gap-2">
+                    {isChildBeneficiary(beneficiary) ? (
+                      <Shield className="w-5 h-5 text-orange-600" />
+                    ) : (
+                      <Heart className="w-5 h-5 text-pink-600" />
+                    )}
+                    <span className={`font-bold text-sm ${
+                      isChildBeneficiary(beneficiary) ? 'text-orange-800' : 'text-pink-800'
+                    }`}>
+                      {isChildBeneficiary(beneficiary) 
+                        ? (language === 'ar' ? 'وحدة حماية الطفولة' : 'Protection Enfance')
+                        : (language === 'ar' ? 'مساعدة النساء' : 'Aide aux Femmes')
+                      }
+                    </span>
+                  </div>
                 </div>
-              )}
+              </div>
+              
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => {
+                  if (isChildBeneficiary(beneficiary)) {
+                    setShowChildForm(true);
+                  } else {
+                    setShowEditForm(true);
+                  }
+                }}
+                className={`bg-white/10 border border-white/30 text-white backdrop-blur-sm ${
+                  isChildBeneficiary(beneficiary) 
+                    ? 'hover:bg-orange-400 hover:border-orange-300' 
+                    : 'hover:bg-pink-400 hover:border-pink-300'
+                } shadow-lg`}
+                size="lg"
+              >
+                <Edit className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('action.edit')}
+              </Button>
+            </div>
+          </div>
+
+          {/* Section profil avec avatar et informations */}
+          <div className="flex items-center space-x-8 mt-6">
+            {/* Avatar amélioré */}
+            <div className="relative">
+              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold shadow-xl border-4 border-white/30">
+                {beneficiary.firstName.charAt(0)}{beneficiary.lastName.charAt(0)}
+              </div>
+              <div className={`absolute -bottom-2 -right-2 w-8 h-8 ${
+                isChildBeneficiary(beneficiary) ? 'bg-orange-400' : 'bg-pink-400'
+              } rounded-full flex items-center justify-center shadow-lg`}>
+                {isChildBeneficiary(beneficiary) ? (
+                  <Shield className="w-4 h-4 text-white" />
+                ) : (
+                  <Heart className="w-4 h-4 text-white" />
+                )}
+              </div>
+            </div>
+            
+            {/* Informations principales */}
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold mb-3 text-white">
+                {beneficiary.firstName} {beneficiary.lastName}
+              </h1>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white/90">
+                <div className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm">
+                  <Users className="w-5 h-5 mr-2" />
+                  <span className="font-medium">{beneficiary.gender === 'Male' ? t('beneficiary.male') : t('beneficiary.female')}</span>
+                </div>
+                <div className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  <span className="font-medium">{calculateAge(beneficiary.dateOfBirth)} {t('beneficiary.years')}</span>
+                </div>
+                {beneficiary.phone && (
+                  <div className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm">
+                    <Phone className="w-5 h-5 mr-2" />
+                    <span className="font-medium">{beneficiary.phone}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Statut du dossier */}
+              <div className="mt-4">
+                <div className="inline-flex items-center bg-white/20 px-4 py-2 rounded-full backdrop-blur-sm">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-white font-medium text-sm">
+                    {(beneficiary as any).status === 'EN_SUIVI' 
+                      ? (language === 'ar' ? 'قيد المتابعة' : 'En suivi actif')
+                      : (language === 'ar' ? 'نشط' : 'Dossier actif')
+                    }
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Time Tracker - Suivi du temps passé sur le dossier */}
       <TimeTracker 
@@ -332,30 +297,50 @@ const BeneficiaryDetailPage: React.FC = () => {
       <div className="space-y-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Alert différent selon le type de bénéficiaire */}
-            <Alert className={`${
+            {/* Alert amélioré selon le type de bénéficiaire */}
+            <Card className={`border-2 ${
               isChildBeneficiary(beneficiary) 
-                ? 'border-orange-200 bg-orange-50' 
-                : 'border-blue-200 bg-blue-50'
-            }`}>
-              <Shield className={`h-4 w-4 ${
-                isChildBeneficiary(beneficiary) ? 'text-orange-600' : 'text-blue-600'
-              }`} />
-              <AlertDescription className={`${
-                isChildBeneficiary(beneficiary) ? 'text-orange-800' : 'text-blue-800'
-              }`}>
-                {isChildBeneficiary(beneficiary) 
-                  ? (language === 'ar' 
-                    ? 'هذا ملف طفل تحت الحماية. يتطلب اهتماماً خاصاً ومتابعة دقيقة.'
-                    : 'Dossier enfant sous protection. Nécessite une attention particulière et un suivi rigoureux.'
-                  )
-                  : (language === 'ar' 
-                    ? 'ملف مستفيدة. يمكن الوصول إلى جميع الخدمات المتاحة.'
-                    : 'Dossier bénéficiaire femme. Accès à tous les services disponibles.'
-                  )
-                }
-              </AlertDescription>
-            </Alert>
+                ? 'border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100' 
+                : 'border-pink-200 bg-gradient-to-r from-pink-50 to-pink-100'
+            } shadow-lg`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-full ${
+                    isChildBeneficiary(beneficiary) ? 'bg-orange-500' : 'bg-pink-500'
+                  } shadow-lg`}>
+                    {isChildBeneficiary(beneficiary) ? (
+                      <Shield className="h-6 w-6 text-white" />
+                    ) : (
+                      <Heart className="h-6 w-6 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg mb-2 ${
+                      isChildBeneficiary(beneficiary) ? 'text-orange-800' : 'text-pink-800'
+                    }`}>
+                      {isChildBeneficiary(beneficiary) 
+                        ? (language === 'ar' ? 'ملف حماية الطفولة' : 'Dossier Protection Enfance')
+                        : (language === 'ar' ? 'ملف مساعدة النساء' : 'Dossier Aide aux Femmes')
+                      }
+                    </h3>
+                    <p className={`${
+                      isChildBeneficiary(beneficiary) ? 'text-orange-700' : 'text-pink-700'
+                    } leading-relaxed`}>
+                      {isChildBeneficiary(beneficiary) 
+                        ? (language === 'ar' 
+                          ? 'هذا ملف طفل تحت الحماية. يتطلب اهتماماً خاصاً ومتابعة دقيقة وحساسة وفقاً لبروتوكولات حماية الطفولة.'
+                          : 'Dossier enfant sous protection. Nécessite une attention particulière et un suivi rigoureux selon les protocoles de protection de l\'enfance.'
+                        )
+                        : (language === 'ar' 
+                          ? 'ملف مستفيدة من برامج مساعدة النساء. الوصول متاح لجميع الخدمات المتخصصة والدعم النفسي والاجتماعي.'
+                          : 'Dossier bénéficiaire des programmes d\'aide aux femmes. Accès disponible à tous les services spécialisés et au soutien psychosocial.'
+                        )
+                      }
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Statut du dossier */}
             <div className="mb-6">
@@ -372,50 +357,48 @@ const BeneficiaryDetailPage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Informations personnelles de base */}
-              <Card className={`border-2 ${
-                isChildBeneficiary(beneficiary) ? 'border-orange-100' : 'border-blue-100'
+              <Card className={`border-2 shadow-lg ${
+                isChildBeneficiary(beneficiary) ? 'border-orange-200' : 'border-pink-200'
               }`}>
                 <CardHeader className={`${
                   isChildBeneficiary(beneficiary) 
-                    ? 'bg-gradient-to-r from-orange-50 to-orange-100' 
-                    : 'bg-gradient-to-r from-blue-50 to-blue-100'
-                }`}>
-                  <CardTitle className={`text-xl ${
-                    isChildBeneficiary(beneficiary) ? 'text-orange-900' : 'text-blue-900'
-                  } flex items-center`}>
-                    <User className="w-5 h-5 mr-2" />
-                    {t.personalInfo}
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600' 
+                    : 'bg-gradient-to-r from-pink-500 to-pink-600'
+                } text-white`}>
+                  <CardTitle className="text-xl flex items-center">
+                    <User className="w-6 h-6 mr-3" />
+                    {t('beneficiary.personalInfo')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 p-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.firstName}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('general.firstName')}</label>
                     <p className="text-lg font-semibold text-gray-900">{beneficiary.firstName}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.lastName}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('general.lastName')}</label>
                     <p className="text-lg font-semibold text-gray-900">{beneficiary.lastName}</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.gender}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('filters.gender')}</label>
                     <Badge variant={beneficiary.gender === 'Female' ? 'secondary' : 'info'}>
-                      {beneficiary.gender === 'Male' ? t.male : t.female}
+                      {beneficiary.gender === 'Male' ? t('beneficiary.male') : t('beneficiary.female')}
                     </Badge>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.age}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('beneficiary.age')}</label>
                     <p className="text-lg font-semibold text-gray-900">
-                      {calculateAge(beneficiary.dateOfBirth)} {language === 'ar' ? 'سنة' : 'ans'}
+                      {calculateAge(beneficiary.dateOfBirth)} {t('beneficiary.years')}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">{t.dateOfBirth}</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">{t('beneficiary.birthdate')}</label>
                   <p className="text-gray-900 flex items-center">
                     <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                     {formatDate(beneficiary.dateOfBirth)}
@@ -424,7 +407,7 @@ const BeneficiaryDetailPage: React.FC = () => {
 
                 {beneficiary.phone && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.phone}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('beneficiary.phone')}</label>
                     <p className="text-gray-900 flex items-center">
                       <Phone className="w-4 h-4 mr-2 text-gray-400" />
                       {beneficiary.phone}
@@ -434,7 +417,7 @@ const BeneficiaryDetailPage: React.FC = () => {
 
                 {beneficiary.address && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.address}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('beneficiary.address')}</label>
                     <p className="text-gray-900 flex items-start">
                       <MapPin className="w-4 h-4 mr-2 mt-0.5 text-gray-400" />
                       <span>{beneficiary.address}</span>
@@ -445,17 +428,17 @@ const BeneficiaryDetailPage: React.FC = () => {
             </Card>
 
             {/* Informations sociales */}
-            <Card className="border-2 border-green-100">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-                <CardTitle className="text-xl text-green-900 flex items-center">
-                  <Heart className="w-5 h-5 mr-2" />
+            <Card className="border-2 border-emerald-200 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+                <CardTitle className="text-xl flex items-center">
+                  <Users className="w-6 h-6 mr-3" />
                   {language === 'ar' ? 'المعلومات الاجتماعية' : 'Informations sociales'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 p-6">
                 {beneficiary.familySituation && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.familySituation}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('general.familySituation')}</label>
                     <p className="text-gray-900 flex items-center">
                       <Users className="w-4 h-4 mr-2 text-gray-400" />
                       {beneficiary.familySituation}
@@ -465,7 +448,7 @@ const BeneficiaryDetailPage: React.FC = () => {
                 
                 {beneficiary.professionalSituation && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">{t.professionalSituation}</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">{t('general.professionalSituation')}</label>
                     <p className="text-gray-900 flex items-center">
                       <Briefcase className="w-4 h-4 mr-2 text-gray-400" />
                       {beneficiary.professionalSituation}
@@ -503,10 +486,10 @@ const BeneficiaryDetailPage: React.FC = () => {
             </Card>
 
             {/* Informations complémentaires */}
-            <Card className="border-2 border-purple-100">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100">
-                <CardTitle className="text-xl text-purple-900 flex items-center">
-                  <Info className="w-5 h-5 mr-2" />
+            <Card className="border-2 border-violet-200 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-violet-500 to-violet-600 text-white">
+                <CardTitle className="text-xl flex items-center">
+                  <Info className="w-6 h-6 mr-3" />
                   {language === 'ar' ? 'معلومات إضافية' : 'Informations complémentaires'}
                 </CardTitle>
               </CardHeader>
@@ -580,7 +563,7 @@ const BeneficiaryDetailPage: React.FC = () => {
           <Card className="border-2 border-blue-100">
             <CardHeader className="border-b border-blue-100">
               <div className="flex justify-between items-center">
-                <CardTitle className="text-xl text-blue-900">{t.documents}</CardTitle>
+                <CardTitle className="text-xl text-blue-900">{t('beneficiary.documents')}</CardTitle>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                   Ajouter
@@ -590,7 +573,7 @@ const BeneficiaryDetailPage: React.FC = () => {
             <CardContent className="p-8">
               <div className="text-center py-12">
                 <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg mb-2">{t.noData}</p>
+                <p className="text-gray-600 text-lg mb-2">Aucune donnée disponible</p>
                 <p className="text-gray-500 text-sm">
                   {language === 'ar' 
                     ? 'لم يتم رفع أي وثائق بعد'
@@ -605,12 +588,12 @@ const BeneficiaryDetailPage: React.FC = () => {
         {activeTab === 'accommodation' && (
           <Card className="border-2 border-blue-100">
             <CardHeader className="border-b border-blue-100">
-              <CardTitle className="text-xl text-blue-900">{t.accommodation}</CardTitle>
+              <CardTitle className="text-xl text-blue-900">{t('beneficiary.accommodation')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <div className="text-center py-12">
                 <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg mb-2">{t.noData}</p>
+                <p className="text-gray-600 text-lg mb-2">Aucune donnée disponible</p>
                 <p className="text-gray-500 text-sm">
                   {language === 'ar' 
                     ? 'لا توجد معلومات إيواء متاحة'
@@ -637,7 +620,7 @@ const BeneficiaryDetailPage: React.FC = () => {
                     className: "w-8 h-8 text-gray-400" 
                   })}
                 </div>
-                <p className="text-gray-600 text-lg mb-2">{t.noData}</p>
+                <p className="text-gray-600 text-lg mb-2">Aucune donnée disponible</p>
                 <p className="text-gray-500 text-sm">
                   {language === 'ar' 
                     ? 'لا توجد بيانات متاحة لهذا القسم'

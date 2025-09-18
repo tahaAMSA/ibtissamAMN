@@ -1,9 +1,9 @@
 import React from 'react';
 import { useI18n } from '../../translations/useI18n';
-import { type Language } from '../../translations';
+import { type Language, type DatabaseLanguage } from '../../translations';
 
 interface GEPSFeaturesProps {
-  user?: { lang?: Language };
+  user?: { preferredLanguage?: DatabaseLanguage };
 }
 
 export default function GEPSFeatures({ user }: GEPSFeaturesProps) {

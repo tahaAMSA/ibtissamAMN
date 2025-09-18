@@ -135,7 +135,7 @@ export const getBeneficiaryById: GetBeneficiaryById<{ id: string }, Beneficiary 
           id: args.id,
           organizationId // Double sécurité
         },
-      include: {
+        include: {
         // Traçabilité du cycle de vie
         createdBy: {
           select: {

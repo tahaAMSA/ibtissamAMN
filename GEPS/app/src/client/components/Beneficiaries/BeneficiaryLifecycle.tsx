@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { User, UserCheck, ArrowRight, Clock, CheckCircle } from 'lucide-react';
+import { User, UserCheck, ArrowRight, Clock, CheckCircle, Heart, Shield } from 'lucide-react';
 import { cn } from '../../cn';
 
 interface BeneficiaryLifecycleProps {
@@ -69,6 +69,24 @@ const BeneficiaryLifecycle: React.FC<BeneficiaryLifecycleProps> = ({
     }).format(new Date(date));
   };
 
+  const calculateAge = (dateOfBirth: string | Date) => {
+    const birth = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const isChildBeneficiary = (beneficiary: any) => {
+    const age = calculateAge(beneficiary.dateOfBirth);
+    return age < 18;
+  };
+
   const steps = [
     {
       id: 'reception',
@@ -100,15 +118,33 @@ const BeneficiaryLifecycle: React.FC<BeneficiaryLifecycleProps> = ({
   ];
 
   return (
-    <Card className={cn("", { "rtl": isRTL })}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className={cn(
+      "border-2 shadow-lg",
+      isChildBeneficiary(beneficiary) ? "border-orange-200 bg-orange-50/30" : "border-pink-200 bg-pink-50/30",
+      { "rtl": isRTL }
+    )}>
+      <CardHeader className={`${
+        isChildBeneficiary(beneficiary) 
+          ? 'bg-gradient-to-r from-orange-100 to-orange-200' 
+          : 'bg-gradient-to-r from-pink-100 to-pink-200'
+      }`}>
+        <CardTitle className={`flex items-center gap-3 text-xl ${
+          isChildBeneficiary(beneficiary) ? 'text-orange-800' : 'text-pink-800'
+        }`}>
+          {isChildBeneficiary(beneficiary) ? <Shield className="h-6 w-6" /> : <Heart className="h-6 w-6" />}
           <Clock className="h-5 w-5" />
           {t.title}
         </CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge className={cn("border", getStatusColor(beneficiary.status))}>
+        <div className="flex items-center gap-3">
+          <Badge className={cn("border-2 px-3 py-1 font-semibold", getStatusColor(beneficiary.status))}>
             {getStatusLabel(beneficiary.status)}
+          </Badge>
+          <Badge className={`${
+            isChildBeneficiary(beneficiary) 
+              ? 'bg-orange-500 text-white' 
+              : 'bg-pink-500 text-white'
+          } px-3 py-1`}>
+            {isChildBeneficiary(beneficiary) ? 'Protection Enfance' : 'Accompagnement Femmes'}
           </Badge>
         </div>
       </CardHeader>
@@ -120,17 +156,23 @@ const BeneficiaryLifecycle: React.FC<BeneficiaryLifecycleProps> = ({
               {/* Icône et ligne de connexion */}
               <div className="flex flex-col items-center">
                 <div className={cn(
-                  "p-2 rounded-full border-2",
+                  "p-3 rounded-full border-2 shadow-md",
                   step.completed 
-                    ? "bg-green-100 border-green-500 text-green-700" 
+                    ? isChildBeneficiary(beneficiary)
+                      ? "bg-orange-100 border-orange-500 text-orange-700" 
+                      : "bg-pink-100 border-pink-500 text-pink-700"
                     : "bg-gray-100 border-gray-300 text-gray-500"
                 )}>
-                  {step.completed ? <CheckCircle className="h-4 w-4" /> : step.icon}
+                  {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
                 </div>
                 {index < steps.length - 1 && (
                   <div className={cn(
-                    "w-0.5 h-8 mt-2",
-                    step.completed ? "bg-green-500" : "bg-gray-300"
+                    "w-1 h-10 mt-2 rounded-full",
+                    step.completed 
+                      ? isChildBeneficiary(beneficiary)
+                        ? "bg-orange-500" 
+                        : "bg-pink-500"
+                      : "bg-gray-300"
                   )} />
                 )}
               </div>

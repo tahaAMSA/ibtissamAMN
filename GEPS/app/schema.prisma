@@ -260,6 +260,12 @@ enum Gender {
   AUTRE
 }
 
+// Enum pour les langues supportées
+enum Language {
+  FR
+  AR
+}
+
 // Enums pour le système d'organisation
 enum OrganizationStatus {
   ACTIVE          // Organisation active
@@ -355,6 +361,9 @@ model User {
   avatar                    String?         // URL de l'image de profil
   phone                     String?
   dateOfBirth               DateTime?       // Date de naissance
+  
+  // Préférence de langue
+  preferredLanguage         Language        @default(FR)
   
   // Statut
   isActive                  Boolean         @default(true)

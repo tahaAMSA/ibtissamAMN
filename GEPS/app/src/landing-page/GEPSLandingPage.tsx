@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '../translations/useI18n';
-import { type Language } from '../translations';
+import { type Language, type DatabaseLanguage } from '../translations';
 import Header from './components/Header';
 import GEPSHero from './components/GEPSHero';
 import GEPSFeatures from './components/GEPSFeatures';
@@ -13,7 +13,7 @@ export default function GEPSLandingPage() {
   const [userLang, setUserLang] = useState<Language>('fr');
   
   // Utilisation du hook d'internationalisation
-  const { dir } = useI18n({ lang: userLang });
+  const { dir } = useI18n({ preferredLanguage: userLang.toUpperCase() as DatabaseLanguage });
 
   // Fonction pour changer la langue
   const handleLanguageChange = (lang: Language) => {
@@ -21,7 +21,7 @@ export default function GEPSLandingPage() {
   };
 
   // Objet utilisateur simulé
-  const user = { lang: userLang };
+  const user = { preferredLanguage: userLang.toUpperCase() as DatabaseLanguage };
 
   return (
     <div className="min-h-screen bg-white" dir={dir}>

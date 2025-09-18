@@ -5,33 +5,24 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '../../cn';
-import { ArrowLeft, Edit, Phone, MapPin, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Edit, Phone, MapPin, Calendar, Users, Heart, Shield } from 'lucide-react';
 import type { Beneficiary } from 'wasp/entities';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../../../translations/useI18n';
 
 interface BeneficiaryDetailHeaderProps {
   beneficiary: Beneficiary;
-  language: 'fr' | 'ar';
   onEdit?: () => void;
   className?: string;
 }
 
 export default function BeneficiaryDetailHeader({
   beneficiary,
-  language,
   onEdit,
   className
 }: BeneficiaryDetailHeaderProps) {
-  const isRTL = language === 'ar';
-
-  const t = {
-    back: language === 'ar' ? 'رجوع' : 'Retour',
-    edit: language === 'ar' ? 'تحرير' : 'Modifier',
-    male: language === 'ar' ? 'ذكر' : 'Homme',
-    female: language === 'ar' ? 'أنثى' : 'Femme',
-    age: language === 'ar' ? 'العمر' : 'Âge',
-    years: language === 'ar' ? 'سنة' : 'ans',
-    personalInfo: language === 'ar' ? 'المعلومات الشخصية' : 'Informations personnelles'
-  };
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
 
   const calculateAge = (dateOfBirth: string | Date) => {
     const birth = new Date(dateOfBirth);
@@ -50,39 +41,74 @@ export default function BeneficiaryDetailHeader({
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
+  const isChildBeneficiary = (beneficiary: any) => {
+    const age = calculateAge(beneficiary.dateOfBirth);
+    return age < 18;
+  };
+
   return (
-    <Card className={cn('border-2 border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50', className)}>
-      <CardContent className="p-8">
+    <Card className={cn(
+      'border-2 shadow-2xl relative overflow-hidden',
+      isChildBeneficiary(beneficiary) 
+        ? 'border-orange-200 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700' 
+        : 'border-pink-200 bg-gradient-to-br from-pink-500 via-pink-600 to-pink-700',
+      className
+    )}>
+      {/* Motifs décoratifs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full"></div>
+        <div className="absolute top-10 -right-8 w-16 h-16 bg-white/5 rounded-full"></div>
+        <div className="absolute bottom-4 -left-8 w-32 h-32 bg-white/5 rounded-full"></div>
+      </div>
+      
+      <CardContent className="p-8 relative text-white">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Link
               to="/beneficiaries"
-              className="p-2 rounded-lg hover:bg-blue-100 transition-colors"
+              className="p-3 rounded-xl hover:bg-white/20 transition-colors backdrop-blur-sm"
             >
-              <ArrowLeft className="w-5 h-5 text-blue-600" />
+              <ArrowLeft className="w-6 h-6 text-white" />
             </Link>
             
-            <Avatar className="h-20 w-20 ring-4 ring-blue-200">
-              <AvatarFallback className="bg-blue-100 text-blue-700 text-xl font-bold">
+            <Avatar className="h-24 w-24 ring-4 ring-white/30 shadow-xl">
+              <AvatarFallback className={`text-2xl font-bold ${
+                isChildBeneficiary(beneficiary) 
+                  ? 'bg-orange-200 text-orange-800' 
+                  : 'bg-pink-200 text-pink-800'
+              }`}>
                 {getInitials(beneficiary.firstName, beneficiary.lastName)}
               </AvatarFallback>
             </Avatar>
 
             <div>
-              <h1 className="text-3xl font-bold text-blue-900 mb-2">
-                {beneficiary.firstName} {beneficiary.lastName}
-              </h1>
+              <div className="flex items-center gap-3 mb-3">
+                {isChildBeneficiary(beneficiary) ? (
+                  <Shield className="w-8 h-8 text-white" />
+                ) : (
+                  <Heart className="w-8 h-8 text-white" />
+                )}
+                <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+                  {beneficiary.firstName} {beneficiary.lastName}
+                </h1>
+              </div>
               <div className="flex items-center space-x-3">
                 <Badge 
-                  variant={beneficiary.gender === 'Female' ? 'secondary' : 'info'}
-                  className="text-sm"
+                  className="bg-white/20 text-white border-white/30 text-sm backdrop-blur-sm"
                 >
                   <Users className="w-4 h-4 mr-1" />
-                  {beneficiary.gender === 'Male' ? t.male : t.female}
+                    {beneficiary.gender === 'Male' ? t('beneficiary.male') : t('beneficiary.female')}
                 </Badge>
-                <Badge variant="outline" className="text-sm">
+                <Badge className="bg-white/20 text-white border-white/30 text-sm backdrop-blur-sm">
                   <Calendar className="w-4 h-4 mr-1" />
-                  {calculateAge(beneficiary.dateOfBirth)} {t.years}
+                  {calculateAge(beneficiary.dateOfBirth)} {t('beneficiary.years')}
+                </Badge>
+                <Badge className={`text-sm font-bold shadow-lg ${
+                  isChildBeneficiary(beneficiary) 
+                    ? 'bg-orange-600 text-white' 
+                    : 'bg-pink-600 text-white'
+                }`}>
+                  {isChildBeneficiary(beneficiary) ? t('lifecycle.protectionChild') : t('lifecycle.supportWomen')}
                 </Badge>
               </div>
             </div>
@@ -91,57 +117,60 @@ export default function BeneficiaryDetailHeader({
           {onEdit && (
             <Button
               onClick={onEdit}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 shadow-xl transition-all duration-200 hover:scale-105"
               size="lg"
             >
-              <Edit className={cn('w-4 h-4', isRTL ? 'ml-2' : 'mr-2')} />
-              {t.edit}
+              <Edit className={cn('w-5 h-5', isRTL ? 'ml-2' : 'mr-2')} />
+              {t('action.edit')}
             </Button>
           )}
         </div>
 
-        {/* Informations de contact */}
+        {/* Informations de contact améliorées */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {beneficiary.phone && (
-            <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-blue-200">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Phone className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center space-x-4 p-5 bg-white/95 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg">
+              <div className="p-3 bg-blue-500 rounded-xl shadow-lg">
+                <Phone className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Téléphone</p>
-                <p className="font-semibold text-gray-900">{beneficiary.phone}</p>
+                <p className="text-sm text-gray-600 font-medium">{t('beneficiary.phone')}</p>
+                <p className="font-bold text-gray-900 text-lg">{beneficiary.phone}</p>
               </div>
             </div>
           )}
 
           {beneficiary.address && (
-            <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-blue-200">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <MapPin className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center space-x-4 p-5 bg-white/95 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg">
+              <div className="p-3 bg-emerald-500 rounded-xl shadow-lg">
+                <MapPin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Adresse</p>
-                <p className="font-semibold text-gray-900 truncate">{beneficiary.address}</p>
+                <p className="text-sm text-gray-600 font-medium">{t('beneficiary.address')}</p>
+                <p className="font-bold text-gray-900 text-lg truncate">{beneficiary.address}</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Informations supplémentaires */}
+        {/* Informations supplémentaires améliorées */}
         {(beneficiary.familySituation || beneficiary.professionalSituation) && (
-          <div className="mt-6 pt-6 border-t border-blue-200">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">{t.personalInfo}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-8 pt-6 border-t border-white/30">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <Users className="w-6 h-6" />
+              {t('beneficiary.personalInfo')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {beneficiary.familySituation && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Situation familiale</p>
-                  <p className="text-gray-900 font-medium">{beneficiary.familySituation}</p>
+                <div className="p-5 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
+                  <p className="text-sm text-white/80 mb-2 font-medium">{t('general.familySituation')}</p>
+                  <p className="text-white font-bold text-lg">{beneficiary.familySituation}</p>
                 </div>
               )}
               {beneficiary.professionalSituation && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Situation professionnelle</p>
-                  <p className="text-gray-900 font-medium">{beneficiary.professionalSituation}</p>
+                <div className="p-5 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
+                  <p className="text-sm text-white/80 mb-2 font-medium">{t('general.professionalSituation')}</p>
+                  <p className="text-white font-bold text-lg">{beneficiary.professionalSituation}</p>
                 </div>
               )}
             </div>

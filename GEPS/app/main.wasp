@@ -313,6 +313,11 @@ action toggleUserStatus {
   entities: [User]
 }
 
+action updateUserProfile {
+  fn: import { updateUserProfile } from "@src/user/operations",
+  entities: [User]
+}
+
 // === GESTION DES RÔLES ET PERMISSIONS ===
 
 // Queries pour les rôles
@@ -380,7 +385,7 @@ query getAllBeneficiaries {
 
 query getBeneficiaryById {
   fn: import { getBeneficiaryById } from "@src/beneficiaries/operations",
-  entities: [Beneficiary, Document, Stay, Meal, ActivityParticipation, EntrepreneurialProject, Enrollment, Education]
+  entities: [Beneficiary, User, Document, Stay, Meal, ActivityParticipation, EntrepreneurialProject, Enrollment, Education]
 }
 
 action createBeneficiary {
@@ -680,6 +685,28 @@ query getAssistantesSociales {
   entities: [User]
 }
 //#endregion
+
+// #region Dashboard
+query getDashboardStats {
+  fn: import { getDashboardStats } from "@src/dashboard/operations",
+  entities: [Beneficiary, Document, Stay, SocialIntervention, Activity, Budget, User]
+}
+
+query getDashboardActivities {
+  fn: import { getDashboardActivities } from "@src/dashboard/operations",
+  entities: [Beneficiary, Document, SocialIntervention, User]
+}
+
+query getDashboardAlerts {
+  fn: import { getDashboardAlerts } from "@src/dashboard/operations",
+  entities: [Budget, Document, SocialIntervention, Beneficiary, User]
+}
+
+query getDashboardExpenses {
+  fn: import { getDashboardExpenses } from "@src/dashboard/operations",
+  entities: [Budget, User]
+}
+// #endregion
 
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {

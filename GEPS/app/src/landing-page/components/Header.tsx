@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useI18n } from '../../translations/useI18n';
-import { type Language } from '../../translations';
+import { type Language, type DatabaseLanguage } from '../../translations';
 
 interface HeaderProps {
-  user?: { lang?: Language };
+  user?: { preferredLanguage?: DatabaseLanguage };
   onLanguageChange?: (lang: Language) => void;
 }
 
@@ -58,7 +58,7 @@ export default function Header({ user, onLanguageChange }: HeaderProps) {
               <button
                 onClick={() => handleLanguageChange('fr')}
                 className={`px-3 py-1.5 text-sm rounded-full font-medium transition-all duration-200 ${
-                  user?.lang === 'fr' || !user?.lang
+                  user?.preferredLanguage === 'FR' || !user?.preferredLanguage
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-white'
                 }`}
@@ -68,7 +68,7 @@ export default function Header({ user, onLanguageChange }: HeaderProps) {
               <button
                 onClick={() => handleLanguageChange('ar')}
                 className={`px-3 py-1.5 text-sm rounded-full font-medium transition-all duration-200 ${
-                  user?.lang === 'ar'
+                  user?.preferredLanguage === 'AR'
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-white'
                 }`}

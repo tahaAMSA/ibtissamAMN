@@ -8,18 +8,20 @@ import ChildProtectionForm from './ChildProtectionForm';
 import SimpleAccueilForm from './SimpleAccueilForm';
 import { useAuth } from 'wasp/client/auth';
 import { UserRole } from '@prisma/client';
+import { useI18n } from '../translations/useI18n';
 
 // Plus d'imports de composants complexes
 import { Button } from '../client/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../client/components/ui/card';
 import { Alert, AlertDescription } from '../client/components/ui/alert';
-import { AlertTriangle, Users, Filter, UserCheck, Activity } from 'lucide-react';
+import { AlertTriangle, Users, Filter, UserCheck, Activity, Heart, Shield, Info, X } from 'lucide-react';
 // Suppression de l'import problématique de Label et Select qui n'existent pas
 
 // Import des composants de protection
 import { ProtectedRoute, ProtectedComponent } from '../client/components/ProtectedComponent';
 import { usePermissions } from '../client/hooks/usePermissions';
 import BeneficiaryGrid from '../client/components/Beneficiaries/BeneficiaryGrid';
+import DashboardPanel from '../client/components/Beneficiaries/DashboardPanel';
 
 
 
@@ -34,7 +36,8 @@ interface FilterState {
 
 const BeneficiariesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: '',
     beneficiaryType: '',
@@ -51,8 +54,7 @@ const BeneficiariesPage: React.FC = () => {
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [assigningBeneficiary, setAssigningBeneficiary] = useState<Beneficiary | null>(null);
   
-  // Récupérer l'utilisateur courant et son rôle
-  const { data: user } = useAuth();
+  // Récupérer le rôle de l'utilisateur (user déjà défini plus haut)
   const isAgentAccueil = user?.role === UserRole.AGENT_ACCUEIL;
   const isDirector = user?.role === UserRole.DIRECTEUR || user?.role === UserRole.COORDINATEUR;
   
@@ -65,41 +67,7 @@ const BeneficiariesPage: React.FC = () => {
   const { data: beneficiaries, isLoading, error, refetch } = useQuery(getAllBeneficiaries);
   const { data: assistantsSociales } = useQuery(getAssistantesSociales);
 
-  const isRTL = language === 'ar';
-
-  // Traductions
-  const t = {
-    title: language === 'ar' ? 'إدارة المستفيدين' : 'Gestion des Bénéficiaires',
-    addNew: language === 'ar' ? 'إضافة مستفيد جديد' : 'Ajouter un nouveau bénéficiaire',
-    addWoman: language === 'ar' ? 'فيش مستفيدة مفصلة' : 'Fiche bénéficiaire détaillée',
-    addChildProtection: language === 'ar' ? 'وحدة حماية الطفولة' : 'Unité Protection Enfance',
-    search: language === 'ar' ? 'البحث...' : 'Rechercher...',
-    filter: language === 'ar' ? 'تصفية' : 'Filtrer',
-    all: language === 'ar' ? 'الكل' : 'Tous',
-    male: language === 'ar' ? 'ذكر' : 'Homme',
-    female: language === 'ar' ? 'أنثى' : 'Femme',
-    firstName: language === 'ar' ? 'الاسم الأول' : 'Prénom',
-    lastName: language === 'ar' ? 'اسم العائلة' : 'Nom de famille',
-    gender: language === 'ar' ? 'الجنس' : 'Genre',
-    dateOfBirth: language === 'ar' ? 'تاريخ الميلاد' : 'Date de naissance',
-    phone: language === 'ar' ? 'الهاتف' : 'Téléphone',
-    address: language === 'ar' ? 'العنوان' : 'Adresse',
-    familySituation: language === 'ar' ? 'الوضع العائلي' : 'Situation familiale',
-    professionalSituation: language === 'ar' ? 'الوضع المهني' : 'Situation professionnelle',
-    actions: language === 'ar' ? 'الإجراءات' : 'Actions',
-    edit: language === 'ar' ? 'تحرير' : 'Modifier',
-    delete: language === 'ar' ? 'حذف' : 'Supprimer',
-    view: language === 'ar' ? 'عرض' : 'Voir',
-    save: language === 'ar' ? 'حفظ' : 'Enregistrer',
-    cancel: language === 'ar' ? 'إلغاء' : 'Annuler',
-    close: language === 'ar' ? 'إغلاق' : 'Fermer',
-    loading: language === 'ar' ? 'جاري التحميل...' : 'Chargement...',
-    noData: language === 'ar' ? 'لا توجد بيانات' : 'Aucune donnée',
-    confirmDelete: language === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Êtes-vous sûr de vouloir supprimer ?',
-    documents: language === 'ar' ? 'الوثائق' : 'Documents',
-    accommodation: language === 'ar' ? 'الإيواء' : 'Hébergement',
-    age: language === 'ar' ? 'العمر' : 'Âge'
-  };
+  // Variables isRTL et t sont maintenant fournies par useI18n hook
 
   const handleEdit = (beneficiary: Beneficiary) => {
     setEditingBeneficiary(beneficiary);
@@ -112,7 +80,7 @@ const BeneficiariesPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t.confirmDelete)) {
+    if (window.confirm(t('beneficiary.confirmDelete'))) {
       try {
         await deleteBeneficiary({ id });
         refetch();
@@ -252,82 +220,285 @@ const BeneficiariesPage: React.FC = () => {
 
   return (
     <div className={`space-y-8 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header simple */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {language === 'ar' ? 'إدارة المستفيدين' : 'Gestion des Bénéficiaires'}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {beneficiaries?.length || 0} {language === 'ar' ? 'مستفيد' : 'bénéficiaires'}
-            </p>
+      {/* Header avec statistiques et boutons améliorés */}
+      <Card className="overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold">
+                {language === 'ar' ? 'إدارة المستفيدين' : 'Gestion des Bénéficiaires'}
+              </h1>
+              <p className="text-blue-100 mt-2 text-lg">
+                {language === 'ar' ? 'منصة إدارة الحالات المتخصصة' : 'Plateforme spécialisée de gestion des cas'}
+              </p>
+            </div>
+            
+            {/* Statistiques rapides */}
+            <div className="flex gap-4">
+              <div className="text-center bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <div className="text-2xl font-bold">
+                  {filteredBeneficiaries.filter(b => {
+                    const age = calculateAge(b.dateOfBirth);
+                    return age >= 18;
+                  }).length}
+                </div>
+                <div className="text-sm text-blue-100">
+                  {t('beneficiary.filter.women').replace('👩 ', '')}
+                </div>
+              </div>
+              <div className="text-center bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <div className="text-2xl font-bold">
+                  {filteredBeneficiaries.filter(b => {
+                    const age = calculateAge(b.dateOfBirth);
+                    return age < 18;
+                  }).length}
+                </div>
+                <div className="text-sm text-blue-100">
+                  {t('beneficiary.filter.children').replace('🧒 ', '')}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            {isAgentAccueil ? (
-              // Formulaire simplifié pour les agents d'accueil
-              <Button onClick={() => setShowSimpleAccueilForm(true)}>
-                {language === 'ar' ? 'إضافة مستفيد جديد' : 'Ajouter un bénéficiaire'}
-              </Button>
-            ) : (
-              // Formulaires standard pour les autres rôles
-              <>
-                {isDirector && (
+        </div>
+
+        {/* Section des boutons d'ajout redesignée */}
+        <div className="p-6 bg-gray-50">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-gray-600" />
+              <span className="text-gray-700 font-medium">
+                {beneficiaries?.length || 0} {language === 'ar' ? 'مستفيد مسجل' : 'bénéficiaires enregistrés'}
+              </span>
+              {showPendingOrientation && (
+                <span className="text-amber-600 text-sm">
+                  • {language === 'ar' ? 'في انتظار التوجيه' : 'En attente d\'orientation'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              {isAgentAccueil ? (
+                // Bouton simplifié pour agents d'accueil
+                <Button 
+                  onClick={() => setShowSimpleAccueilForm(true)}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg"
+                  size="lg"
+                >
+                  <UserCheck className="w-5 h-5 mr-2" />
+                  {language === 'ar' ? 'إضافة مستفيد جديد' : 'Nouvel accueil'}
+                </Button>
+              ) : (
+                // Boutons spécialisés pour les autres rôles
+                <>
+                  {isDirector && (
+                    <Button 
+                      variant={showPendingOrientation ? "default" : "outline"}
+                      className={showPendingOrientation 
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0" 
+                        : "border-amber-300 text-amber-700 hover:bg-amber-50"
+                      }
+                      onClick={() => setShowPendingOrientation(!showPendingOrientation)}
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      {showPendingOrientation
+                        ? (language === 'ar' ? 'عرض الكل' : 'Voir tout')
+                        : (language === 'ar' ? 'التوجيه' : 'À orienter')
+                      }
+                    </Button>
+                  )}
+                  
+                  {/* Bouton Femmes - Design spécialisé */}
                   <Button 
-                    variant={showPendingOrientation ? "default" : "outline"}
-                    className={showPendingOrientation ? "bg-amber-600 hover:bg-amber-700" : ""}
-                    onClick={() => setShowPendingOrientation(!showPendingOrientation)}
+                    onClick={() => setShowWomenForm(true)}
+                    className="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white shadow-lg border-0"
+                    size="lg"
                   >
-                    <Activity className="w-4 h-4 mr-2" />
-                    {showPendingOrientation
-                      ? 'Voir tous les bénéficiaires'
-                      : 'Voir bénéficiaires à orienter'
-                    }
+                    <Heart className="w-5 h-5 mr-2" />
+                    {language === 'ar' ? 'مستفيدة جديدة' : 'Nouvelle femme'}
                   </Button>
-                )}
-                <Button onClick={() => setShowWomenForm(true)}>
-                  {language === 'ar' ? 'إضافة امرأة' : 'Ajouter une femme'}
-                </Button>
-                <Button onClick={() => setShowChildProtectionForm(true)} variant="outline">
-                  {language === 'ar' ? 'إضافة طفل' : 'Ajouter un enfant'}
-                </Button>
-              </>
+                  
+                  {/* Bouton Enfants - Design spécialisé */}
+                  <Button 
+                    onClick={() => setShowChildProtectionForm(true)}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg border-0"
+                    size="lg"
+                  >
+                    <Shield className="w-5 h-5 mr-2" />
+                    {language === 'ar' ? 'طفل جديد' : 'Nouvel enfant'}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Message informatif selon le type d'utilisateur */}
+          <div className="mt-4">
+            {isAgentAccueil ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center text-blue-800 text-sm">
+                  <Info className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>
+                    {language === 'ar' 
+                      ? 'قم بإجراء الاستقبال الأولي. سيتم إشعار الإدارة لتوجيه المستفيد إلى الخدمة المناسبة.'
+                      : 'Effectuez l\'accueil initial. La direction sera notifiée pour orienter le bénéficiaire vers le service approprié.'
+                    }
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                  <div className="flex items-center text-pink-800">
+                    <Heart className="w-4 h-4 mr-2" />
+                    <span className="font-medium">
+                      {language === 'ar' ? 'مساعدة النساء' : 'Aide aux femmes'}
+                    </span>
+                  </div>
+                  <p className="text-pink-700 mt-1 text-xs">
+                    {language === 'ar' 
+                      ? 'النساء في حالات صعبة، عنف، طلاق أو صعوبات اجتماعية'
+                      : 'Femmes en situation difficile, violence, divorce ou difficultés sociales'
+                    }
+                  </p>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-center text-orange-800">
+                    <Shield className="w-4 h-4 mr-2" />
+                    <span className="font-medium">
+                      {t('beneficiary.protection.child')}
+                    </span>
+                  </div>
+                  <p className="text-orange-700 mt-1 text-xs">
+                    {t('beneficiary.protection.child.desc')}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
       </Card>
 
-      {/* Filtres simples */}
-      <Card className="p-4">
-        <div className="flex gap-4 flex-wrap">
-          <input
-            type="text"
-            placeholder={language === 'ar' ? 'البحث...' : 'Rechercher...'}
-            value={filters.searchTerm}
-            onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          />
-          <select
-            value={filters.gender}
-            onChange={(e) => setFilters(prev => ({ ...prev, gender: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="">{language === 'ar' ? 'كل الأجناس' : 'Tous les genres'}</option>
-            <option value="Male">{language === 'ar' ? 'ذكر' : 'Homme'}</option>
-            <option value="Female">{language === 'ar' ? 'أنثى' : 'Femme'}</option>
-          </select>
-          <span className="px-3 py-2 text-sm text-gray-600">
-            {filteredBeneficiaries.length} {language === 'ar' ? 'نتيجة' : 'résultats'}
-          </span>
+      {/* Filtres améliorés avec focus sur les types de bénéficiaires */}
+      <Card className="p-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Barre de recherche principale */}
+          <div className="flex-1">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t('beneficiary.search.placeholder')}
+                value={filters.searchTerm}
+                onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                dir={dir}
+              />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Filtres par type et catégorie */}
+          <div className="flex gap-3 flex-wrap">
+            {/* Filtre par type de bénéficiaire */}
+            <select
+              value={filters.beneficiaryType}
+              onChange={(e) => setFilters(prev => ({ ...prev, beneficiaryType: e.target.value }))}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]"
+            >
+              <option value="">{t('beneficiary.filter.allTypes')}</option>
+              <option value="FEMME">{t('beneficiary.filter.women')}</option>
+              <option value="ENFANT">{t('beneficiary.filter.children')}</option>
+            </select>
+
+            {/* Filtre par genre */}
+            <select
+              value={filters.gender}
+              onChange={(e) => setFilters(prev => ({ ...prev, gender: e.target.value }))}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">{language === 'ar' ? 'كل الأجناس' : 'Tous genres'}</option>
+              <option value="Male">{language === 'ar' ? 'ذكر' : 'Masculin'}</option>
+              <option value="Female">{language === 'ar' ? 'أنثى' : 'Féminin'}</option>
+            </select>
+
+            {/* Filtre par tranche d'âge */}
+            <select
+              value={filters.ageRange}
+              onChange={(e) => setFilters(prev => ({ ...prev, ageRange: e.target.value }))}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">{language === 'ar' ? 'كل الأعمار' : 'Tous âges'}</option>
+              <option value="0-17">{language === 'ar' ? '0-17 سنة' : '0-17 ans'}</option>
+              <option value="18-64">{language === 'ar' ? '18-64 سنة' : '18-64 ans'}</option>
+              <option value="65+">{language === 'ar' ? '65+ سنة' : '65+ ans'}</option>
+            </select>
+
+            {/* Bouton de réinitialisation */}
+            {(filters.searchTerm || filters.beneficiaryType || filters.gender || filters.ageRange) && (
+              <Button
+                variant="outline"
+                onClick={() => setFilters({
+                  searchTerm: '',
+                  beneficiaryType: '',
+                  gender: '',
+                  ageRange: '',
+                  city: '',
+                  status: ''
+                })}
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <X className="w-4 h-4 mr-1" />
+                {language === 'ar' ? 'مسح' : 'Effacer'}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Ligne d'informations et statut */}
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600 flex items-center">
+              <Users className="w-4 h-4 mr-1.5" />
+              {filteredBeneficiaries.length} {language === 'ar' ? 'نتيجة' : 'résultats'}
+            </span>
+            
+            {/* Répartition rapide */}
+            <div className="flex gap-4 text-xs">
+              <span className="text-pink-600 flex items-center">
+                <div className="w-2 h-2 bg-pink-500 rounded-full mr-1"></div>
+                {filteredBeneficiaries.filter(b => {
+                  const age = calculateAge(b.dateOfBirth);
+                  return age >= 18;
+                }).length} {language === 'ar' ? 'امرأة' : 'femmes'}
+              </span>
+              <span className="text-orange-600 flex items-center">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mr-1"></div>
+                {filteredBeneficiaries.filter(b => {
+                  const age = calculateAge(b.dateOfBirth);
+                  return age < 18;
+                }).length} {language === 'ar' ? 'طفل' : 'enfants'}
+              </span>
+            </div>
+          </div>
           
+          {/* Indicateur de mode orientation */}
           {isDirector && showPendingOrientation && (
-            <div className="ml-auto px-3 py-1 text-sm bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
-              <UserCheck className="h-4 w-4 text-yellow-600 mr-1.5" />
-              <span className="text-yellow-700">Mode orientation active</span>
+            <div className="flex items-center px-3 py-1 text-sm bg-amber-50 border border-amber-200 rounded-full">
+              <UserCheck className="h-4 w-4 text-amber-600 mr-1.5" />
+              <span className="text-amber-700 font-medium">
+                {language === 'ar' ? 'وضع التوجيه نشط' : 'Mode orientation actif'}
+              </span>
             </div>
           )}
         </div>
       </Card>
+
+      {/* Tableau de bord avec statistiques */}
+      <DashboardPanel 
+        beneficiaries={beneficiaries || []} 
+        language={language}
+        isDirector={isDirector}
+        showPendingOrientation={showPendingOrientation}
+      />
 
       {/* Liste des bénéficiaires avec BeneficiaryGrid */}
       {isLoading ? (
@@ -341,7 +512,6 @@ const BeneficiariesPage: React.FC = () => {
       ) : (
         <BeneficiaryGrid
           beneficiaries={filteredBeneficiaries}
-          language={language}
           onEdit={isDirector && showPendingOrientation ? handleAssign : handleEdit}
           onView={handleView}
           isLoading={isLoading}

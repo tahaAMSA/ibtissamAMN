@@ -1,4 +1,7 @@
-import { translations, type Language, type Translations } from './index';
+import { translations, type Language, type DatabaseLanguage, type Translations } from './index';
+
+// Réexporter les types pour qu'ils soient disponibles
+export type { Language, DatabaseLanguage } from './index';
 
 /**
  * Fonction de traduction principale
@@ -18,12 +21,31 @@ export function t(key: string, lang: Language = 'fr'): string {
 }
 
 /**
+ * Convertit une langue de la base de données vers le format frontend
+ * @param dbLang - Langue depuis la base de données
+ * @returns Langue pour le frontend
+ */
+export function convertDatabaseLanguage(dbLang?: DatabaseLanguage): Language {
+  if (!dbLang) return 'fr';
+  return dbLang.toLowerCase() as Language;
+}
+
+/**
+ * Convertit une langue du frontend vers le format base de données
+ * @param lang - Langue frontend
+ * @returns Langue pour la base de données
+ */
+export function convertToDatabase(lang: Language): DatabaseLanguage {
+  return lang.toUpperCase() as DatabaseLanguage;
+}
+
+/**
  * Hook pour obtenir la langue de l'utilisateur
- * @param user - Utilisateur avec propriété lang optionnelle
+ * @param user - Utilisateur avec propriété preferredLanguage optionnelle
  * @returns Langue de l'utilisateur (par défaut: 'fr')
  */
-export function getUserLanguage(user?: { lang?: Language }): Language {
-  return user?.lang || 'fr';
+export function getUserLanguage(user?: { preferredLanguage?: DatabaseLanguage }): Language {
+  return convertDatabaseLanguage(user?.preferredLanguage);
 }
 
 /**
