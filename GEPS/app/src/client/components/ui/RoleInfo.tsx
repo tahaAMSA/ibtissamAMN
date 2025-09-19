@@ -222,7 +222,7 @@ export function RoleInfo({ role, language = 'fr', variant = 'compact', className
 
   if (variant === 'compact') {
     return (
-      <div className={`flex items-center space-x-2 ${className}`}>
+      <div className={`flex items-center space-x-3 ${className}`}>
         <div className={`p-1.5 rounded-md ${roleDetails.bgColor}`}>
           <div className={roleDetails.color}>
             {roleDetails.icon}

@@ -16,7 +16,6 @@ import {
   addOrganizationFilter, 
   withOrganizationAccess,
   createWithOrganization,
-  checkOrganizationLimits,
   verifyOrganizationAccess
 } from '../server/multiTenant';
 
@@ -26,7 +25,7 @@ type CreateBeneficiaryInput = {
   lastName: string;
   gender: string;
   dateOfBirth: string;
-  beneficiaryType?: 'FEMME' | 'ENFANT';
+  beneficiaryType: 'FEMME' | 'ENFANT'; // Maintenant obligatoire - choix manuel
   visitReason?: string; // Nouveau champ pour le motif de visite
   phone?: string;
   address?: string;
@@ -253,23 +252,15 @@ export const createBeneficiary: CreateBeneficiary<CreateBeneficiaryInput, Benefi
   }
 
   // Validation des champs requis
-  if (!args.firstName || !args.lastName || !args.gender || !args.dateOfBirth) {
-    throw new HttpError(400, 'Les champs nom, prénom, genre et date de naissance sont obligatoires');
+  if (!args.firstName || !args.lastName || !args.gender || !args.dateOfBirth || !args.beneficiaryType) {
+    throw new HttpError(400, 'Les champs nom, prénom, genre, date de naissance et type de bénéficiaire sont obligatoires');
   }
 
   // Utiliser le système multi-tenant
   return await withOrganizationAccess(context.user, context, async (organizationId) => {
-    // Vérifier les limites de l'organisation
-    await checkOrganizationLimits(organizationId, 'beneficiaries', context);
-
   try {
-    // Déterminer automatiquement le type si non fourni
-    let beneficiaryType = args.beneficiaryType;
-    if (!beneficiaryType) {
-      const birthDate = new Date(args.dateOfBirth);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
-      beneficiaryType = age < 18 ? 'ENFANT' : 'FEMME';
-    }
+    // Utiliser le type fourni explicitement (obligatoire maintenant)
+    const beneficiaryType = args.beneficiaryType;
 
     // Déterminer le statut initial basé sur le rôle de l'utilisateur
     let initialStatus: any = 'EN_ATTENTE_ACCUEIL';

@@ -16,6 +16,7 @@ interface RecentActivityProps {
   title: string;
   activities: Activity[];
   className?: string;
+  language?: 'ar' | 'fr';
 }
 
 const typeColors = {
@@ -30,7 +31,8 @@ const typeColors = {
 export default function RecentActivity({
   title,
   activities,
-  className
+  className,
+  language = 'fr'
 }: RecentActivityProps) {
   return (
     <Card className={cn('border-blue-100 border-2', className)}>
@@ -42,7 +44,9 @@ export default function RecentActivity({
         {activities.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-sm">Aucune activité récente</p>
+            <p className="text-sm">
+              {language === 'ar' ? 'لا توجد أنشطة حديثة' : 'Aucune activité récente'}
+            </p>
           </div>
         ) : (
           activities.map((activity, index) => {
@@ -68,7 +72,7 @@ export default function RecentActivity({
                   <div className="flex items-center mt-1 space-x-2">
                     <p className="text-xs text-gray-500 flex items-center">
                       <Clock className="w-3 h-3 mr-1" />
-                      Il y a {activity.time}
+                      {language === 'ar' ? `منذ ${activity.time}` : `Il y a ${activity.time}`}
                     </p>
                     {activity.priority && (
                       <Badge 
@@ -78,8 +82,12 @@ export default function RecentActivity({
                         }
                         className="text-xs"
                       >
-                        {activity.priority === 'high' ? 'Urgent' : 
-                         activity.priority === 'medium' ? 'Important' : 'Normal'}
+                        {language === 'ar' 
+                          ? (activity.priority === 'high' ? 'عاجل' : 
+                             activity.priority === 'medium' ? 'مهم' : 'عادي')
+                          : (activity.priority === 'high' ? 'Urgent' : 
+                             activity.priority === 'medium' ? 'Important' : 'Normal')
+                        }
                       </Badge>
                     )}
                   </div>

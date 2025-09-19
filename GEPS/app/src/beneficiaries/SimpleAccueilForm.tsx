@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { createBeneficiary } from 'wasp/client/operations';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../translations/useI18n';
 import { Button } from '../client/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../client/components/ui/card';
 import { Input } from '../client/components/ui/input';
@@ -22,6 +24,9 @@ interface FormData {
 }
 
 const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCancel }) => {
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
+  
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -35,7 +40,6 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [document, setDocument] = useState<File | null>(null);
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
 
   // Motifs de visite avec traductions
   const visitReasons = {
@@ -63,16 +67,6 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
       ...prev,
       [field]: value
     }));
-
-    // Auto-déterminer le type basé sur la date de naissance
-    if (field === 'dateOfBirth' && value) {
-      const birthDate = new Date(value);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
-      setFormData(prev => ({
-        ...prev,
-        beneficiaryType: age < 18 ? 'ENFANT' : 'FEMME'
-      }));
-    }
   };
 
   const handleDocumentUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,7 +123,7 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
     }
   };
 
-  const t = {
+  const translations = {
     title: language === 'fr' ? 'Accueil - Nouveau Bénéficiaire' : 'الاستقبال - مستفيد جديد',
     subtitle: language === 'fr' ? 'Formulaire simplifié pour l\'enregistrement initial' : 'نموذج مبسط للتسجيل الأولي',
     firstName: language === 'fr' ? 'Prénom' : 'الاسم الأول',
@@ -149,7 +143,7 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto shadow-2xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <Card className="w-full max-w-3xl mx-auto shadow-2xl" dir={dir}>
       <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white">
         <div className="flex justify-between items-center">
           <div>
@@ -157,21 +151,11 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
               <div className="p-2 bg-white/20 rounded-full">
                 <UserCheck className="h-6 w-6" />
               </div>
-              {t.title}
+              {translations.title}
             </CardTitle>
             <p className="text-green-100 mt-2">
-              {t.subtitle}
+              {translations.subtitle}
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLanguage(language === 'fr' ? 'ar' : 'fr')}
-              className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-green-700"
-            >
-              {language === 'fr' ? 'العربية' : 'Français'}
-            </Button>
           </div>
         </div>
       </CardHeader>
@@ -188,29 +172,29 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t.firstName} <span className="text-red-500">*</span>
+                {translations.firstName} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder={t.firstName}
+                placeholder={translations.firstName}
                 required
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                dir={dir}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t.lastName} <span className="text-red-500">*</span>
+                {translations.lastName} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder={t.lastName}
+                placeholder={translations.lastName}
                 required
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                dir={dir}
               />
             </div>
           </div>
@@ -218,24 +202,24 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t.gender} <span className="text-red-500">*</span>
+                {translations.gender} <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.gender}
                 onChange={(e) => handleInputChange('gender', e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                dir={dir}
               >
-                <option value="">{t.select}</option>
-                <option value="Féminin">{t.female}</option>
-                <option value="Masculin">{t.male}</option>
+                <option value="">{translations.select}</option>
+                <option value="Féminin">{translations.female}</option>
+                <option value="Masculin">{translations.male}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t.dateOfBirth} <span className="text-red-500">*</span>
+                {translations.dateOfBirth} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="date"
@@ -246,35 +230,46 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
             </div>
           </div>
 
-          {/* Type déterminé automatiquement */}
-          <div className="bg-gray-50 p-3 rounded-md">
-            <label className="block text-sm font-medium mb-1">Type de bénéficiaire</label>
-            <div className="text-sm text-gray-600">
-              {formData.beneficiaryType === 'ENFANT' ? (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Enfant (moins de 18 ans)
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Femme (18 ans et plus)
-                </span>
-              )}
-            </div>
+          {/* Type de bénéficiaire - Sélection manuelle */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {language === 'fr' ? 'Type de bénéficiaire' : 'نوع المستفيد'} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.beneficiaryType}
+              onChange={(e) => handleInputChange('beneficiaryType', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+              dir={dir}
+            >
+              <option value="FEMME">
+                {language === 'fr' ? 'Femme bénéficiaire' : 'امرأة مستفيدة'}
+              </option>
+              <option value="ENFANT">
+                {language === 'fr' ? 'Enfant' : 'طفل'}
+              </option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              {language === 'fr' 
+                ? 'Une fille de moins de 18 ans peut être considérée comme femme bénéficiaire selon la situation'
+                : 'يمكن اعتبار فتاة أقل من 18 سنة كامرأة مستفيدة حسب الوضع'
+              }
+            </p>
           </div>
 
           {/* Motif de la visite */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              {t.visitReason} <span className="text-red-500">*</span>
+              {translations.visitReason} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.visitReason}
               onChange={(e) => handleInputChange('visitReason', e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
-              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              dir={dir}
             >
-              <option value="">{t.select}</option>
+              <option value="">{translations.select}</option>
               {Object.entries(visitReasons).map(([key, value]) => (
                 <option key={key} value={key}>
                   {value[language]}
@@ -287,15 +282,15 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
           {formData.visitReason === 'AUTRE' && (
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t.otherReason} <span className="text-red-500">*</span>
+                {translations.otherReason} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.visitReasonOther}
                 onChange={(e) => handleInputChange('visitReasonOther', e.target.value)}
-                placeholder={t.otherReason}
+                placeholder={translations.otherReason}
                 required
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                dir={dir}
               />
             </div>
           )}
@@ -303,7 +298,7 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
           {/* Upload de document */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              {t.document}
+              {translations.document}
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
               <div className="text-center">
@@ -336,7 +331,7 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
           {/* Note d'information */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
             <p className="text-sm text-yellow-800" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <strong>{language === 'fr' ? 'Note :' : 'ملاحظة:'}</strong> {t.note}
+              <strong>{language === 'fr' ? 'Note :' : 'ملاحظة:'}</strong> {translations.note}
             </p>
           </div>
 
@@ -350,12 +345,12 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {t.saving}
+                  {translations.saving}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  {t.save}
+                  {translations.save}
                 </>
               )}
             </Button>
@@ -367,7 +362,7 @@ const SimpleAccueilForm: React.FC<SimpleAccueilFormProps> = ({ onSuccess, onCanc
               disabled={isSubmitting}
             >
               <X className="h-4 w-4 mr-2" />
-              {t.cancel}
+              {translations.cancel}
             </Button>
           </div>
         </form>

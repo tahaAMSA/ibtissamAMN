@@ -1,5 +1,5 @@
 import { HttpError } from 'wasp/server';
-import type { UpdateUserProfile } from 'wasp/server/operations';
+import type { UpdateUserProfile, GetCurrentUser } from 'wasp/server/operations';
 import type { User } from 'wasp/entities';
 import { convertToDatabase, type Language } from '../translations/utils';
 
@@ -51,5 +51,29 @@ export const updateUserProfile: UpdateUserProfile<UpdateUserProfileInput, User> 
     }
     console.error('Erreur lors de la mise à jour du profil utilisateur:', error);
     throw new HttpError(500, 'Erreur serveur lors de la mise à jour du profil');
+  }
+};
+
+export const getCurrentUser: GetCurrentUser<void, User> = async (_args, context) => {
+  if (!context.user) {
+    throw new HttpError(401, 'Non autorisé');
+  }
+
+  try {
+    const user = await context.entities.User.findUnique({
+      where: { id: context.user.id }
+    });
+
+    if (!user) {
+      throw new HttpError(404, 'Utilisateur introuvable');
+    }
+
+    return user;
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
+    console.error('Erreur lors de la récupération des informations utilisateur:', error);
+    throw new HttpError(500, 'Erreur serveur lors de la récupération du profil');
   }
 };

@@ -1,11 +1,12 @@
 import { HttpError } from 'wasp/server';
-import type { 
+import type {
   GetDashboardStats,
   GetDashboardActivities,
   GetDashboardAlerts,
   GetDashboardExpenses
 } from 'wasp/server/operations';
 import type { AuthUser } from 'wasp/auth';
+import { getUserLanguage, t } from '../translations/utils';
 
 // Types pour les données du dashboard (compatibles SuperJSON)
 interface DashboardStats {
@@ -21,6 +22,8 @@ interface DashboardStats {
   monthlyData: {
     [key: string]: any;
     month: string;
+    monthIndex: number;
+    year: number;
     beneficiaires: number;
     interventions: number;
     activites: number;
@@ -56,7 +59,7 @@ interface ExpenseCategory {
 // Statistiques principales du dashboard
 export const getDashboardStats: GetDashboardStats<void, DashboardStats> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Utilisateur non authentifié');
+    throw new HttpError(401, 'المستخدم غير مُعرَّف');
   }
 
   try {
@@ -116,6 +119,8 @@ export const getDashboardStats: GetDashboardStats<void, DashboardStats> = async 
     const now = new Date();
     const monthlyData: Array<{
       month: string;
+      monthIndex: number;
+      year: number;
       beneficiaires: number;
       interventions: number;
       activites: number;
@@ -125,9 +130,11 @@ export const getDashboardStats: GetDashboardStats<void, DashboardStats> = async 
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       
-      const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+      // On envoie l'index du mois et l'année, la traduction se fera côté client
+      const monthIndex = date.getMonth();
+      const year = date.getFullYear();
       
-      // Compter les nouveaux bénéficiaires du mois
+      // Compter les bénéficiaires nouveaux du mois
       const monthlyBeneficiaries = await context.entities.Beneficiary.count({
         where: {
           ...(organizationId ? { organizationId } : {}),
@@ -161,7 +168,9 @@ export const getDashboardStats: GetDashboardStats<void, DashboardStats> = async 
       });
 
       monthlyData.push({
-        month: monthName,
+        month: `${monthIndex}_${year}`, // Temporaire, sera remplacé côté client
+        monthIndex,
+        year,
         beneficiaires: monthlyBeneficiaries,
         interventions: monthlyInterventions,
         activites: monthlyActivities
@@ -180,19 +189,27 @@ export const getDashboardStats: GetDashboardStats<void, DashboardStats> = async 
       monthlyData
     };
   } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques du dashboard:', error);
-    throw new HttpError(500, 'Erreur lors de la récupération des statistiques');
+    console.error('خطأ في استرداد إحصائيات لوحة التحكم:', error);
+    throw new HttpError(500, 'خطأ في استرداد الإحصائيات');
   }
 };
 
 // Activités récentes
 export const getDashboardActivities: GetDashboardActivities<void, DashboardActivity[]> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Utilisateur non authentifié');
+    throw new HttpError(401, 'المستخدم غير مُعرَّف');
   }
 
   try {
     const organizationId = (context.user as AuthUser & { organizationId?: number }).organizationId;
+    
+    // Récupérer les informations utilisateur complètes pour la langue
+    const fullUser = await context.entities.User.findUnique({
+      where: { id: context.user.id },
+      select: { preferredLanguage: true }
+    });
+    
+    const userLanguage = getUserLanguage(fullUser || undefined);
     
     // On utilise une approche simplifiée en récupérant les dernières créations
     const recentBeneficiaries = await context.entities.Beneficiary.findMany({
@@ -240,34 +257,42 @@ export const getDashboardActivities: GetDashboardActivities<void, DashboardActiv
 
     const activities: DashboardActivity[] = [];
 
-    // Ajouter les bénéficiaires récents
+    // إضافة المستفيدين الحديثين
     recentBeneficiaries.forEach(b => {
+      const newBeneficiaryText = userLanguage === 'ar' ? 'مستفيد جديد' : 'Nouveau bénéficiaire';
       activities.push({
         id: b.id,
         type: 'beneficiary',
-        action: `Nouveau bénéficiaire: ${b.firstName} ${b.lastName}`,
+        action: `${newBeneficiaryText}: ${b.firstName} ${b.lastName}`,
         createdAt: b.createdAt.toISOString(),
         priority: 'low'
       });
     });
 
-    // Ajouter les documents récents
+    // إضافة الوثائق الحديثة
     recentDocuments.forEach(d => {
+      const documentText = userLanguage === 'ar' 
+        ? `تم إضافة وثيقة ${d.type} لـ` 
+        : `Document ${d.type} ajouté pour`;
       activities.push({
         id: d.id,
         type: 'document',
-        action: `Document ${d.type} ajouté pour ${d.beneficiary.firstName} ${d.beneficiary.lastName}`,
+        action: `${documentText} ${d.beneficiary.firstName} ${d.beneficiary.lastName}`,
         createdAt: d.createdAt.toISOString(),
         priority: 'medium'
       });
     });
 
-    // Ajouter les interventions récentes
+    // إضافة التدخلات الحديثة
     recentInterventions.forEach(i => {
+      const interventionText = userLanguage === 'ar' ? 'تدخل' : 'Intervention';
+      const inProgressText = userLanguage === 'ar' ? '(جاري)' : '(EN COURS)';
+      const statusText = i.status === 'IN_PROGRESS' ? inProgressText : '';
+      
       activities.push({
         id: i.id,
         type: 'intervention',
-        action: `Intervention "${i.title}" ${i.status === 'IN_PROGRESS' ? '(EN COURS)' : ''}`,
+        action: `${interventionText} "${i.title}" ${statusText}`,
         createdAt: i.createdAt.toISOString(),
         priority: i.status === 'IN_PROGRESS' ? 'high' : 'medium'
       });
@@ -279,23 +304,31 @@ export const getDashboardActivities: GetDashboardActivities<void, DashboardActiv
       .slice(0, 10);
 
   } catch (error) {
-    console.error('Erreur lors de la récupération des activités:', error);
-    throw new HttpError(500, 'Erreur lors de la récupération des activités');
+    console.error('خطأ في استرداد الأنشطة:', error);
+    throw new HttpError(500, 'خطأ في استرداد الأنشطة');
   }
 };
 
 // Alertes du dashboard
 export const getDashboardAlerts: GetDashboardAlerts<void, DashboardAlert[]> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Utilisateur non authentifié');
+    throw new HttpError(401, 'المستخدم غير مُعرَّف');
   }
 
   try {
     const organizationId = (context.user as AuthUser & { organizationId?: number }).organizationId;
+    
+    // Récupérer les informations utilisateur complètes pour la langue
+    const fullUser = await context.entities.User.findUnique({
+      where: { id: context.user.id },
+      select: { preferredLanguage: true }
+    });
+    
+    const userLanguage = getUserLanguage(fullUser || undefined);
     const alerts: DashboardAlert[] = [];
     const now = new Date();
 
-    // Vérifier les budgets critiques (> 85% utilisés)
+    // التحقق من الميزانيات الحرجة (> 85% مستخدمة)
     const budgets = await context.entities.Budget.findMany({
       where: organizationId ? { organizationId } : {}
     });
@@ -303,37 +336,45 @@ export const getDashboardAlerts: GetDashboardAlerts<void, DashboardAlert[]> = as
     budgets.forEach(budget => {
       const usagePercentage = (budget.usedAmount / budget.initialAmount) * 100;
       if (usagePercentage > 85) {
+        const budgetText = userLanguage === 'ar' 
+          ? `ميزانية ${budget.module} مستخدمة بنسبة ${usagePercentage.toFixed(1)}%`
+          : `Budget ${budget.module} utilisé à ${usagePercentage.toFixed(1)}%`;
+          
         alerts.push({
           type: usagePercentage > 95 ? 'error' : 'warning',
-          message: `Budget ${budget.module} utilisé à ${usagePercentage.toFixed(1)}%`,
+          message: budgetText,
           priority: usagePercentage > 95 ? 'high' : 'medium',
           createdAt: now.toISOString()
         });
       }
     });
 
-    // Vérifier les documents qui expirent bientôt (dans les 30 jours)
+    // التحقق من الوثائق التي تنتهي صلاحيتها قريباً (خلال 30 يوماً)
     const expiringDocuments = await context.entities.Document.count({
       where: {
         ...(organizationId ? { 
           beneficiary: { organizationId }
         } : {}),
         createdAt: {
-          gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 jours passés
+          gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // آخر 30 يوماً
         }
       }
     });
 
     if (expiringDocuments > 0) {
+      const documentsText = userLanguage === 'ar'
+        ? `${expiringDocuments} وثيقة حديثة (آخر 30 يوماً)`
+        : `${expiringDocuments} document(s) récents (30 derniers jours)`;
+        
       alerts.push({
         type: 'warning',
-        message: `${expiringDocuments} document(s) récents (30 derniers jours)`,
+        message: documentsText,
         priority: 'medium',
         createdAt: now.toISOString()
       });
     }
 
-    // Vérifier les interventions en cours et planifiées
+    // التحقق من التدخلات الجارية والمجدولة
     const inProgressInterventions = await context.entities.SocialIntervention.count({
       where: {
         ...(organizationId ? { organizationId } : {}),
@@ -342,15 +383,19 @@ export const getDashboardAlerts: GetDashboardAlerts<void, DashboardAlert[]> = as
     });
 
     if (inProgressInterventions > 0) {
+      const interventionsText = userLanguage === 'ar'
+        ? `${inProgressInterventions} تدخل(ات) جارية`
+        : `${inProgressInterventions} intervention(s) en cours`;
+        
       alerts.push({
         type: 'warning',
-        message: `${inProgressInterventions} intervention(s) en cours`,
+        message: interventionsText,
         priority: 'medium',
         createdAt: now.toISOString()
       });
     }
 
-    // Vérifier les nouvelles inscriptions du mois
+    // التحقق من التسجيلات الجديدة للشهر
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const newBeneficiaries = await context.entities.Beneficiary.count({
       where: {
@@ -362,30 +407,34 @@ export const getDashboardAlerts: GetDashboardAlerts<void, DashboardAlert[]> = as
     });
 
     if (newBeneficiaries > 10) {
+      const newBeneficiariesText = userLanguage === 'ar'
+        ? `${newBeneficiaries} مستفيد جديد هذا الشهر`
+        : `${newBeneficiaries} nouveaux bénéficiaires ce mois`;
+        
       alerts.push({
         type: 'success',
-        message: `${newBeneficiaries} nouveaux bénéficiaires ce mois`,
+        message: newBeneficiariesText,
         priority: 'low',
         createdAt: now.toISOString()
       });
     }
 
-    // Trier par priorité (high -> medium -> low) puis par type
+    // ترتيب حسب الأولوية (عالية -> متوسطة -> منخفضة) ثم حسب النوع
     return alerts.sort((a, b) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
   } catch (error) {
-    console.error('Erreur lors de la récupération des alertes:', error);
-    throw new HttpError(500, 'Erreur lors de la récupération des alertes');
+    console.error('خطأ في استرداد التنبيهات:', error);
+    throw new HttpError(500, 'خطأ في استرداد التنبيهات');
   }
 };
 
 // Répartition des dépenses par catégorie
 export const getDashboardExpenses: GetDashboardExpenses<void, ExpenseCategory[]> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Utilisateur non authentifié');
+    throw new HttpError(401, 'المستخدم غير مُعرَّف');
   }
 
   try {
@@ -395,7 +444,7 @@ export const getDashboardExpenses: GetDashboardExpenses<void, ExpenseCategory[]>
       where: organizationId ? { organizationId } : {}
     });
 
-    // Regrouper par catégorie
+    // تجميع حسب الفئة
     const categoryMap = new Map<string, { amount: number, budget: number }>();
     
     budgets.forEach(budget => {
@@ -408,7 +457,7 @@ export const getDashboardExpenses: GetDashboardExpenses<void, ExpenseCategory[]>
       });
     });
 
-    // Convertir en tableau avec pourcentages
+    // تحويل إلى مصفوفة مع النسب المئوية
     const categories: ExpenseCategory[] = Array.from(categoryMap.entries()).map(([name, data]) => ({
       name,
       amount: data.amount,
@@ -416,11 +465,11 @@ export const getDashboardExpenses: GetDashboardExpenses<void, ExpenseCategory[]>
       percentage: data.budget > 0 ? (data.amount / data.budget) * 100 : 0
     }));
 
-    // Trier par montant dépensé (décroissant)
+    // ترتيب حسب المبلغ المنفق (تنازلي)
     return categories.sort((a, b) => b.amount - a.amount);
 
   } catch (error) {
-    console.error('Erreur lors de la récupération des dépenses:', error);
-    throw new HttpError(500, 'Erreur lors de la récupération des dépenses');
+    console.error('خطأ في استرداد النفقات:', error);
+    throw new HttpError(500, 'خطأ في استرداد النفقات');
   }
 };

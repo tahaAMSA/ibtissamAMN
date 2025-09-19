@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { createBeneficiary, updateBeneficiary } from 'wasp/client/operations';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../translations/useI18n';
 import { 
   Save, 
   X, 
@@ -279,7 +281,8 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
   beneficiary,
   onSuccess
 }) => {
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -371,10 +374,8 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
     descriptionGlobale: beneficiary?.descriptionGlobale || ''
   });
 
-  const isRTL = language === 'ar';
-
   // Traductions mémorisées pour la performance
-  const t = useMemo(() => ({
+  const translations = useMemo(() => ({
     title: language === 'ar' ? 'استمارة ضحايا العنف – وحدة حماية الطفولة' : 'Fiche Victimes de Violence - Unité Protection de l\'Enfance',
     save: language === 'ar' ? 'حفظ' : 'Enregistrer',
     cancel: language === 'ar' ? 'إلغاء' : 'Annuler',
@@ -396,12 +397,12 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
   }), [language]);
 
   const stepTitles = useMemo(() => [
-    { title: t.dossierInfo, icon: FileText, color: 'bg-blue-500' },
-    { title: t.childInfo, icon: Baby, color: 'bg-blue-600' },
-    { title: t.accompagnateurInfo, icon: UserCheck, color: 'bg-blue-700' },
-    { title: t.violenceInfo, icon: Shield, color: 'bg-blue-800' },
-    { title: t.description, icon: ClipboardList, color: 'bg-blue-900' }
-  ], [t]);
+    { title: translations.dossierInfo, icon: FileText, color: 'bg-blue-500' },
+    { title: translations.childInfo, icon: Baby, color: 'bg-blue-600' },
+    { title: translations.accompagnateurInfo, icon: UserCheck, color: 'bg-blue-700' },
+    { title: translations.violenceInfo, icon: Shield, color: 'bg-blue-800' },
+    { title: translations.description, icon: ClipboardList, color: 'bg-blue-900' }
+  ], [translations]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,6 +414,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
         lastName: formData.nom,
         dateOfBirth: formData.dateNaissance,
         gender: formData.sexe,
+        beneficiaryType: 'ENFANT' as const, // Protection de l'enfant = ENFANT
         phone: formData.telephone,
         address: formData.adresse,
         familySituation: formData.situationFamiliale || 'Unknown',
@@ -493,7 +495,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   <FileText className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.dossierInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.dossierInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات أساسية حول الملف' : 'Informations de base sur le dossier'}</p>
                 </div>
               </div>
@@ -584,7 +586,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   <Baby className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.childInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.childInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات شخصية عن الطفل' : 'Informations personnelles sur l\'enfant'}</p>
                 </div>
               </div>
@@ -625,7 +627,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                     value={formData.sexe}
                     onChange={(e) => setFormData(prev => ({ ...prev, sexe: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="Male">{language === 'ar' ? 'ذكر' : 'Masculin'}</option>
                     <option value="Female">{language === 'ar' ? 'أنثى' : 'Féminin'}</option>
                   </select>
@@ -705,7 +707,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   <UserCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.accompagnateurInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.accompagnateurInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات الشخص المرافق' : 'Informations sur la personne accompagnante'}</p>
                 </div>
               </div>
@@ -745,7 +747,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                     value={formData.lienParental}
                     onChange={(e) => setFormData(prev => ({ ...prev, lienParental: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="mere">{language === 'ar' ? 'الأم' : 'Mère'}</option>
                     <option value="pere">{language === 'ar' ? 'الأب' : 'Père'}</option>
                     <option value="grand_mere">{language === 'ar' ? 'الجدة' : 'Grand-mère'}</option>
@@ -770,7 +772,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   <Shield className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.violenceInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.violenceInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات حول العنف المتعرض له' : 'Informations sur la violence subie'}</p>
                 </div>
               </div>
@@ -809,7 +811,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                       violenceInfo: { ...prev.violenceInfo, lieu: e.target.value }
                     }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="domicile">{language === 'ar' ? 'المنزل' : 'Domicile'}</option>
                     <option value="ecole">{language === 'ar' ? 'المدرسة' : 'École'}</option>
                     <option value="rue">{language === 'ar' ? 'الشارع' : 'Rue'}</option>
@@ -844,7 +846,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   <ClipboardList className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.description}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.description}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'وصف شامل للحالة' : 'Description complète du cas'}</p>
                 </div>
               </div>
@@ -910,33 +912,15 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex-1">
-              <h2 className="text-xl font-bold">{t.title}</h2>
+              <h2 className="text-xl font-bold">{translations.title}</h2>
               <div className="flex items-center mt-2 text-blue-100">
                 <span className="text-sm">
-                  {t.step} {currentStep} {t.of} {totalSteps}: {stepTitles[currentStep - 1].title}
+                  {translations.step} {currentStep} {translations.of} {totalSteps}: {stepTitles[currentStep - 1].title}
                 </span>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setLanguage('fr')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                    language === 'fr' ? 'bg-white text-blue-600' : 'bg-blue-500 text-white hover:bg-blue-400'
-                  }`}
-                >
-                  FR
-                </button>
-                <button
-                  onClick={() => setLanguage('ar')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                    language === 'ar' ? 'bg-white text-blue-600' : 'bg-blue-500 text-white hover:bg-blue-400'
-                  }`}
-                >
-                  AR
-                </button>
-              </div>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-blue-500 rounded-lg transition-colors"
@@ -1014,7 +998,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
               }`}
             >
               <ArrowLeft className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {t.previous}
+              {translations.previous}
             </button>
 
             <div className="flex items-center space-x-4">
@@ -1032,12 +1016,12 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      {t.saving}
+                      {translations.saving}
                     </>
                   ) : (
                     <>
                       <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      {t.save}
+                      {translations.save}
                     </>
                   )}
                 </button>
@@ -1047,7 +1031,7 @@ const ChildProtectionForm: React.FC<ChildProtectionFormProps> = ({
                   onClick={handleNext}
                   className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg"
                 >
-                  {t.next}
+                  {translations.next}
                   <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
                 </button>
               )}

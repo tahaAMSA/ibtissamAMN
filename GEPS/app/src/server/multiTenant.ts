@@ -135,58 +135,6 @@ const ENTITY_MAP = {
   role: 'Role'
 } as const
 
-/**
- * Vérifie les limites de l'organisation selon son plan
- */
-export async function checkOrganizationLimits(
-  organizationId: string,
-  resourceType: 'users' | 'beneficiaries' | 'storage',
-  context: { entities: any }
-): Promise<void> {
-  const organization = await context.entities.Organization.findUnique({
-    where: { id: organizationId },
-    select: { 
-      maxUsers: true, 
-      maxBeneficiaries: true, 
-      maxStorage: true,
-      status: true 
-    }
-  })
-
-  if (!organization) {
-    throw new HttpError(404, 'Organisation non trouvée')
-  }
-
-  if (organization.status !== 'ACTIVE') {
-    throw new HttpError(403, 'Organisation suspendue ou inactive')
-  }
-
-  // Vérifications selon le type de ressource
-  switch (resourceType) {
-    case 'users':
-      const userCount = await context.entities.User.count({
-        where: { organizationId }
-      })
-      if (userCount >= organization.maxUsers) {
-        throw new HttpError(403, `Limite d'utilisateurs atteinte (${organization.maxUsers})`)
-      }
-      break
-
-    case 'beneficiaries':
-      const beneficiaryCount = await context.entities.Beneficiary.count({
-        where: { organizationId }
-      })
-      if (beneficiaryCount >= organization.maxBeneficiaries) {
-        throw new HttpError(403, `Limite de bénéficiaires atteinte (${organization.maxBeneficiaries})`)
-      }
-      break
-
-    case 'storage':
-      // Pour l'instant, pas de vérification du stockage
-      // TODO: Implémenter le calcul de l'espace utilisé
-      break
-  }
-}
 
 /**
  * Helper pour créer des ressources avec organizationId automatique

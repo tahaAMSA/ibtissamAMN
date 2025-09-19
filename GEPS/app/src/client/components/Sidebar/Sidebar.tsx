@@ -4,7 +4,7 @@ import { cn } from '../../cn';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Button, buttonVariants } from '../ui/button';
+import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
@@ -31,17 +31,21 @@ import {
   Clock,
   Bell,
   ChevronDown,
-  Menu
+  Menu,
+  Heart,
+  Briefcase,
+  UserCog,
+  PieChart
 } from 'lucide-react';
 import { UserRole } from '@prisma/client';
 import { usePermissions, PermissionModule } from '../../hooks/usePermissions';
+import { useI18n } from '../../../translations/useI18n';
 import type { User } from 'wasp/entities';
 import { logout } from 'wasp/client/auth';
 
 interface MenuItem {
   icon: React.ReactNode;
-  label: string;
-  labelAr: string;
+  labelKey: string;
   path: string;
   module: PermissionModule;
 }
@@ -73,13 +77,17 @@ const iconMap = {
   clock: <Clock className="w-4 h-4" />,
   shield: <Shield className="w-4 h-4" />,
   bell: <Bell className="w-4 h-4" />,
+  heart: <Heart className="w-4 h-4" />,
+  briefcase: <Briefcase className="w-4 h-4" />,
+  userCog: <UserCog className="w-4 h-4" />,
+  pieChart: <PieChart className="w-4 h-4" />,
 };
 
 // Structure de navigation moderne et simplifiée
 interface NavGroup {
   id: string;
-  label: string;
-  labelAr: string;
+  labelKey: string;
+  icon: React.ReactNode;
   items: MenuItem[];
 }
 
@@ -87,22 +95,19 @@ interface NavGroup {
 const primaryNavItems: MenuItem[] = [
   {
     icon: iconMap.home,
-    label: "Tableau de bord",
-    labelAr: "لوحة التحكم",
+    labelKey: 'sidebar.nav.dashboard',
     path: "/dashboard",
     module: "SYSTEM"
   },
   {
     icon: iconMap.users,
-    label: "Bénéficiaires",
-    labelAr: "المستفيدون",
+    labelKey: 'sidebar.nav.beneficiaries',
     path: "/beneficiaries",
     module: "BENEFICIARIES"
   },
   {
     icon: iconMap.bell,
-    label: "Notifications",
-    labelAr: "الإشعارات",
+    labelKey: 'sidebar.nav.notifications',
     path: "/notifications",
     module: "NOTIFICATIONS"
   }
@@ -112,27 +117,24 @@ const primaryNavItems: MenuItem[] = [
 const navGroups: NavGroup[] = [
   {
     id: "services",
-    label: "Services & Ressources",
-    labelAr: "الخدمات والموارد",
+    labelKey: 'sidebar.group.services',
+    icon: iconMap.heart,
     items: [
       {
         icon: iconMap.home,
-        label: "Hébergement",
-        labelAr: "الإيواء",
+        labelKey: 'sidebar.nav.accommodation',
         path: "/accommodation",
         module: "ACCOMMODATION"
       },
       {
         icon: iconMap.utensils,
-        label: "Repas",
-        labelAr: "الوجبات",
+        labelKey: 'sidebar.nav.meals',
         path: "/meals",
         module: "MEALS"
       },
       {
         icon: iconMap.package,
-        label: "Ressources",
-        labelAr: "الموارد",
+        labelKey: 'sidebar.nav.resources',
         path: "/resources",
         module: "RESOURCES"
       }
@@ -140,20 +142,18 @@ const navGroups: NavGroup[] = [
   },
   {
     id: "support",
-    label: "Accompagnement",
-    labelAr: "المرافقة",
+    labelKey: 'sidebar.group.support',
+    icon: iconMap.userCog,
     items: [
       {
         icon: iconMap.fileText,
-        label: "Documents",
-        labelAr: "الوثائق",
+        labelKey: 'sidebar.nav.documents',
         path: "/documents",
         module: "DOCUMENTS"
       },
       {
         icon: iconMap.messageSquare,
-        label: "Interventions",
-        labelAr: "التدخلات",
+        labelKey: 'sidebar.nav.interventions',
         path: "/interventions",
         module: "INTERVENTIONS"
       }
@@ -161,34 +161,30 @@ const navGroups: NavGroup[] = [
   },
   {
     id: "development",
-    label: "Développement",
-    labelAr: "التطوير",
+    labelKey: 'sidebar.group.development',
+    icon: iconMap.briefcase,
     items: [
       {
         icon: iconMap.graduationCap,
-        label: "Éducation",
-        labelAr: "التعليم",
+        labelKey: 'sidebar.nav.education',
         path: "/education",
         module: "EDUCATION"
       },
       {
         icon: iconMap.bookOpen,
-        label: "Formations",
-        labelAr: "التدريبات",
+        labelKey: 'sidebar.nav.training',
         path: "/training",
         module: "TRAINING"
       },
       {
         icon: iconMap.activity,
-        label: "Activités",
-        labelAr: "الأنشطة",
+        labelKey: 'sidebar.nav.activities',
         path: "/activities",
         module: "ACTIVITIES"
       },
       {
         icon: iconMap.lightbulb,
-        label: "Projets",
-        labelAr: "المشاريع",
+        labelKey: 'sidebar.nav.projects',
         path: "/projects",
         module: "PROJECTS"
       }
@@ -196,20 +192,18 @@ const navGroups: NavGroup[] = [
   },
   {
     id: "management",
-    label: "Gestion",
-    labelAr: "الإدارة",
+    labelKey: 'sidebar.group.management',
+    icon: iconMap.pieChart,
     items: [
       {
         icon: iconMap.dollarSign,
-        label: "Budget",
-        labelAr: "الميزانية",
+        labelKey: 'sidebar.nav.budget',
         path: "/budget",
         module: "BUDGET"
       },
       {
         icon: iconMap.clock,
-        label: "Suivi du temps",
-        labelAr: "تتبع الوقت",
+        labelKey: 'sidebar.nav.timeTracking',
         path: "/time-tracking",
         module: "SYSTEM"
       }
@@ -222,21 +216,17 @@ const NavItem = memo(({
   item, 
   isActive, 
   isRTL, 
-  language, 
+  t,
   variant = 'default',
   onClose 
 }: {
   item: MenuItem;
   isActive: boolean;
   isRTL: boolean;
-  language: 'fr' | 'ar';
+  t: (key: string) => string;
   variant?: 'default' | 'primary' | 'secondary';
   onClose: () => void;
 }) => {
-  const getLabel = useCallback((item: MenuItem) => {
-    return language === 'ar' ? item.labelAr : item.label;
-  }, [language]);
-
   const handleClick = useCallback(() => {
     onClose();
   }, [onClose]);
@@ -255,7 +245,12 @@ const NavItem = memo(({
   return (
     <Button
       variant="ghost"
-      className={cn(baseStyles, variantStyles[variant], activeStyles)}
+      className={cn(
+        baseStyles, 
+        variantStyles[variant], 
+        activeStyles,
+        isRTL ? "flex-row-reverse" : ""
+      )}
       asChild
     >
       <Link to={item.path} onClick={handleClick}>
@@ -265,11 +260,11 @@ const NavItem = memo(({
         )}>
           {item.icon}
         </span>
-        <span className="truncate font-medium">{getLabel(item)}</span>
+        <span className="truncate font-medium">{t(item.labelKey)}</span>
         {isActive && (
           <div className={cn(
-            "ml-auto w-1.5 h-1.5 rounded-full bg-blue-600",
-            isRTL && "mr-auto ml-0"
+            "w-1.5 h-1.5 rounded-full bg-blue-600",
+            isRTL ? "mr-auto" : "ml-auto"
           )} />
         )}
       </Link>
@@ -283,23 +278,19 @@ NavItem.displayName = 'NavItem';
 const NavGroup = memo(({
   group,
   isRTL,
-  language,
+  t,
   onClose,
   canViewInNavigation,
   isActive
 }: {
   group: NavGroup;
   isRTL: boolean;
-  language: 'fr' | 'ar';
+  t: (key: string) => string;
   onClose: () => void;
   canViewInNavigation: (module: PermissionModule) => boolean;
   isActive: (path: string) => boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  
-  const getGroupLabel = useCallback((group: NavGroup) => {
-    return language === 'ar' ? group.labelAr : group.label;
-  }, [language]);
 
   // Filtrer les éléments selon les permissions
   const visibleItems = useMemo(() => 
@@ -323,7 +314,15 @@ const NavGroup = memo(({
           isRTL && "flex-row-reverse"
         )}
       >
-        <span className="uppercase tracking-wider">{getGroupLabel(group)}</span>
+        <div className={cn(
+          "flex items-center gap-2",
+          isRTL && "flex-row-reverse"
+        )}>
+          <span className="shrink-0">
+            {group.icon}
+          </span>
+          <span className="uppercase tracking-wider">{t(group.labelKey)}</span>
+        </div>
         <ChevronDown className={cn(
           "w-3 h-3 transition-transform duration-200",
           isOpen && "rotate-180"
@@ -338,7 +337,7 @@ const NavGroup = memo(({
               item={item}
               isActive={isActive(item.path)}
               isRTL={isRTL}
-              language={language}
+              t={t}
               variant="secondary"
               onClose={onClose}
             />
@@ -416,7 +415,10 @@ const UserProfile = memo(({
   return (
     <Card className="m-3 shadow-sm">
       <CardContent className="p-4">
-        <div className="flex items-center space-x-3 mb-3">
+        <div className={cn(
+          "flex items-center mb-3",
+          isRTL ? "space-x-reverse space-x-3" : "space-x-3"
+        )}>
           <Avatar className="h-10 w-10 ring-2 ring-blue-300/50">
             <AvatarFallback className="bg-gradient-to-br from-blue-100 to-pink-100 text-blue-700 font-semibold">
               {userInitial}
@@ -431,11 +433,13 @@ const UserProfile = memo(({
             </p>
           </div>
         </div>
-        <RoleInfo 
-          role={user.role as UserRole} 
-          language={language} 
-          variant="compact"
-        />
+        <div className="mt-2">
+          <RoleInfo 
+            role={user.role as UserRole} 
+            language={language} 
+            variant="compact"
+          />
+        </div>
       </CardContent>
     </Card>
   );
@@ -447,52 +451,16 @@ UserProfile.displayName = 'UserProfile';
 const SidebarFooter = memo(({ 
   isCollapsed, 
   isRTL, 
-  language, 
-  onToggleLanguage 
+  t
 }: {
   isCollapsed: boolean;
   isRTL: boolean;
-  language: 'fr' | 'ar';
-  onToggleLanguage: () => void;
+  t: (key: string) => string;
 }) => {
-  const handleLanguageToggle = useCallback(() => {
-    onToggleLanguage();
-  }, [onToggleLanguage]);
-
-  const languageButtonContent = useMemo(() => 
-    language === 'ar' ? 'FR' : 'عر', 
-    [language]
-  );
-
-  const settingsLabel = useMemo(() => 
-    language === 'ar' ? 'الإعدادات' : 'Paramètres', 
-    [language]
-  );
-
-  const logoutLabel = useMemo(() => 
-    language === 'ar' ? 'تسجيل الخروج' : 'Déconnexion', 
-    [language]
-  );
 
   if (isCollapsed) {
     return (
       <div className="p-2 space-y-1 border-t">
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLanguageToggle}
-              className="w-full h-8 text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              <Globe className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side={isRTL ? "left" : "right"}>
-            {language === 'ar' ? 'Changer vers Français' : 'تغيير إلى العربية'}
-          </TooltipContent>
-        </Tooltip>
-
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <Button
@@ -507,7 +475,7 @@ const SidebarFooter = memo(({
             </Button>
           </TooltipTrigger>
           <TooltipContent side={isRTL ? "left" : "right"}>
-            {settingsLabel}
+            {t('sidebar.tooltip.settings')}
           </TooltipContent>
         </Tooltip>
 
@@ -523,7 +491,7 @@ const SidebarFooter = memo(({
             </Button>
           </TooltipTrigger>
           <TooltipContent side={isRTL ? "left" : "right"}>
-            {logoutLabel}
+            {t('sidebar.tooltip.logout')}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -534,26 +502,12 @@ const SidebarFooter = memo(({
     <div className="p-3 space-y-1 border-t bg-muted/30">
       <Button
         variant="ghost"
-        onClick={handleLanguageToggle}
-        className="w-full justify-start h-9 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
-      >
-        <Globe className={cn("w-4 h-4", isRTL ? "ml-3" : "mr-3")} />
-        <span className="flex items-center gap-2">
-          {language === 'ar' ? 'Français' : 'العربية'}
-          <Badge variant="outline" className="text-xs">
-            {languageButtonContent}
-          </Badge>
-        </span>
-      </Button>
-      
-      <Button
-        variant="ghost"
         className="w-full justify-start h-9 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
         asChild
       >
         <Link to="/account">
           <Settings className={cn("w-4 h-4", isRTL ? "ml-3" : "mr-3")} />
-          {settingsLabel}
+          {t('sidebar.tooltip.settings')}
         </Link>
       </Button>
       
@@ -563,7 +517,7 @@ const SidebarFooter = memo(({
         onClick={() => logout()}
       >
         <LogOut className={cn("w-4 h-4", isRTL ? "ml-3" : "mr-3")} />
-        {logoutLabel}
+        {t('sidebar.tooltip.logout')}
       </Button>
     </div>
   );
@@ -583,6 +537,7 @@ const Sidebar = memo(function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const { canViewInNavigation, isAdmin } = usePermissions();
+  const { t } = useI18n(user);
   
   // Mémorisation des callbacks pour éviter les re-renders
   const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
@@ -605,21 +560,25 @@ const Sidebar = memo(function Sidebar({
   // Menu d'administration
   const adminMenuItem: MenuItem = useMemo(() => ({
     icon: iconMap.shield,
-    label: "Administration",
-    labelAr: "الإدارة",
+    labelKey: 'sidebar.nav.administration',
     path: "/admin",
     module: "USERS"
   }), []);
 
-  // Classes CSS modernes avec système de design tokens
+  // Classes CSS modernes avec système de design tokens et support RTL amélioré
   const sidebarWidth = useMemo(() => isCollapsed ? 'w-16' : 'w-72', [isCollapsed]);
   
   const sidebarClasses = useMemo(() => cn(
-    "fixed inset-y-0 z-50 flex flex-col bg-background border-r border-border shadow-xl",
+    "fixed inset-y-0 z-50 flex flex-col bg-background border-border shadow-xl",
     "transform transition-all duration-300 ease-in-out",
     sidebarWidth,
-    isRTL ? 'right-0' : 'left-0',
-    isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full',
+    isRTL ? [
+      'right-0 border-l',
+      isOpen ? 'translate-x-0' : 'translate-x-full'
+    ] : [
+      'left-0 border-r',
+      isOpen ? 'translate-x-0' : '-translate-x-full'
+    ],
     'lg:translate-x-0',
     // Amélioration pour éviter les débordements
     'max-h-screen overflow-hidden'
@@ -640,11 +599,11 @@ const Sidebar = memo(function Sidebar({
 
   return (
     <TooltipProvider>
-      <div className={sidebarClasses}>
-        {/* Header moderne avec logo */}
+      <div className={sidebarClasses} dir={isRTL ? 'rtl' : 'ltr'}>
+        {/* Header moderne avec logo centré et support RTL */}
         <div className="flex items-center justify-between h-20 px-4 bg-white border-b border-gray-200">
           {!isCollapsed && (
-            <div className="flex items-center min-w-0 flex-1">
+            <div className="flex items-center justify-center w-full">
               <img 
                 src="/logo-GEPS.png" 
                 alt="GEPS Logo" 
@@ -664,8 +623,12 @@ const Sidebar = memo(function Sidebar({
             </div>
           )}
           
-          <div className="flex items-center gap-1">
-            {/* Desktop collapse button */}
+          {/* Boutons de contrôle positionnés absolument pour ne pas affecter le centrage */}
+          <div className={cn(
+            "absolute top-4 flex items-center gap-1",
+            isRTL ? "left-4" : "right-4"
+          )}>
+            {/* Desktop collapse button avec support RTL */}
             <Button
               variant="ghost"
               size="icon"
@@ -700,15 +663,18 @@ const Sidebar = memo(function Sidebar({
           />
         )}
 
-        {/* Navigation principale */}
+        {/* Navigation principale avec amélioration RTL */}
         <div className="flex-1 flex flex-col min-h-0">
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-1">
               {/* Navigation principale */}
               {!isCollapsed && (
                 <div className="mb-4">
-                  <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {language === 'ar' ? 'الرئيسية' : 'Principal'}
+                  <h3 className={cn(
+                    "px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                    isRTL ? "text-right" : "text-left"
+                  )}>
+                    {t('sidebar.navigation.main')}
                   </h3>
                   <div className="space-y-1">
                     {visiblePrimaryItems.map((item) => (
@@ -717,7 +683,7 @@ const Sidebar = memo(function Sidebar({
                         item={item}
                         isActive={isActive(item.path)}
                         isRTL={isRTL}
-                        language={language}
+                        t={t}
                         variant="primary"
                         onClose={handleClose}
                       />
@@ -726,7 +692,7 @@ const Sidebar = memo(function Sidebar({
                 </div>
               )}
 
-              {/* Navigation en mode collapsed */}
+              {/* Navigation en mode collapsed avec support RTL */}
               {isCollapsed && (
                 <div className="space-y-2">
                   {visiblePrimaryItems.map((item) => (
@@ -747,7 +713,7 @@ const Sidebar = memo(function Sidebar({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side={isRTL ? "left" : "right"}>
-                        {language === 'ar' ? item.labelAr : item.label}
+                        {t(item.labelKey)}
                       </TooltipContent>
                     </Tooltip>
                   ))}
@@ -771,7 +737,7 @@ const Sidebar = memo(function Sidebar({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side={isRTL ? "left" : "right"}>
-                        {language === 'ar' ? adminMenuItem.labelAr : adminMenuItem.label}
+                        {t(adminMenuItem.labelKey)}
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -786,7 +752,7 @@ const Sidebar = memo(function Sidebar({
                       key={group.id}
                       group={group}
                       isRTL={isRTL}
-                      language={language}
+                      t={t}
                       onClose={handleClose}
                       canViewInNavigation={canViewInNavigation}
                       isActive={isActive}
@@ -796,14 +762,17 @@ const Sidebar = memo(function Sidebar({
                   {/* Menu d'administration */}
                   {isAdmin && (
                     <div className="space-y-1">
-                      <div className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {language === 'ar' ? 'الإدارة' : 'Administration'}
+                      <div className={cn(
+                        "px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                        isRTL ? "text-right" : "text-left"
+                      )}>
+                        {t('sidebar.navigation.administration')}
                       </div>
                       <NavItem
                         item={adminMenuItem}
                         isActive={isActive(adminMenuItem.path)}
                         isRTL={isRTL}
-                        language={language}
+                        t={t}
                         variant="default"
                         onClose={handleClose}
                       />
@@ -815,12 +784,11 @@ const Sidebar = memo(function Sidebar({
           </ScrollArea>
         </div>
 
-        {/* Footer moderne */}
+        {/* Footer moderne avec i18n et support RTL */}
         <SidebarFooter
           isCollapsed={isCollapsed}
           isRTL={isRTL}
-          language={language}
-          onToggleLanguage={handleLanguageToggle}
+          t={t}
         />
       </div>
     </TooltipProvider>

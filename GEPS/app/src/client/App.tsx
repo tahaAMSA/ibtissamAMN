@@ -57,7 +57,8 @@ export default function App() {
            location.pathname.startsWith('/projects') ||
            location.pathname.startsWith('/budget') ||
            location.pathname.startsWith('/notifications') ||
-           location.pathname.startsWith('/admin');
+           location.pathname.startsWith('/admin') ||
+           location.pathname.startsWith('/account');
   }, [location]);
 
   const isPendingApproval = location.pathname === '/pending-approval';

@@ -15,6 +15,8 @@ import { Button } from '../client/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../client/components/ui/card';
 import { Alert, AlertDescription } from '../client/components/ui/alert';
 import { AlertTriangle, Users, Filter, UserCheck, Activity, Heart, Shield, Info, X } from 'lucide-react';
+import BackButton from '../client/components/ui/BackButton';
+import Breadcrumb from '../client/components/ui/Breadcrumb';
 // Suppression de l'import problématique de Label et Select qui n'existent pas
 
 // Import des composants de protection
@@ -219,7 +221,15 @@ const BeneficiariesPage: React.FC = () => {
   }
 
   return (
-    <div className={`space-y-8 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`space-y-6 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Navigation Breadcrumb */}
+      <div className="flex items-center justify-between">
+        <Breadcrumb language={language as 'fr' | 'ar'} />
+        <BackButton fallbackPath="/dashboard">
+          {language === 'ar' ? 'العودة' : 'Retour'}
+        </BackButton>
+      </div>
+
       {/* Header avec statistiques et boutons améliorés */}
       <Card className="overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-6">

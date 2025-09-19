@@ -15,13 +15,15 @@ interface ChartCardProps {
   description?: string;
   data: ChartDataItem[];
   className?: string;
+  language?: 'ar' | 'fr';
 }
 
 export default function ChartCard({
   title,
   description,
   data,
-  className
+  className,
+  language = 'fr'
 }: ChartCardProps) {
   const maxValues = {
     beneficiaires: Math.max(...data.map(d => d.beneficiaires)),
@@ -41,15 +43,21 @@ export default function ChartCard({
         <div className="flex space-x-6 text-sm mt-4">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-            <span className="text-gray-700">Bénéficiaires</span>
+            <span className="text-gray-700">
+              {language === 'ar' ? 'المستفيدون' : 'Bénéficiaires'}
+            </span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-            <span className="text-gray-700">Interventions</span>
+            <span className="text-gray-700">
+              {language === 'ar' ? 'التدخلات' : 'Interventions'}
+            </span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-            <span className="text-gray-700">Activités</span>
+            <span className="text-gray-700">
+              {language === 'ar' ? 'الأنشطة' : 'Activités'}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -64,7 +72,9 @@ export default function ChartCard({
             <div className="space-y-2">
               {/* Bénéficiaires */}
               <div className="flex items-center space-x-3">
-                <div className="w-20 text-xs text-gray-600">Bénéficiaires</div>
+                <div className="w-20 text-xs text-gray-600">
+                  {language === 'ar' ? 'مستفيدون' : 'Bénéficiaires'}
+                </div>
                 <div className="flex-1 relative">
                   <Progress 
                     value={(item.beneficiaires / maxValues.beneficiaires) * 100} 
@@ -78,7 +88,9 @@ export default function ChartCard({
               
               {/* Interventions */}
               <div className="flex items-center space-x-3">
-                <div className="w-20 text-xs text-gray-600">Interventions</div>
+                <div className="w-20 text-xs text-gray-600">
+                  {language === 'ar' ? 'تدخلات' : 'Interventions'}
+                </div>
                 <div className="flex-1 relative">
                   <Progress 
                     value={(item.interventions / maxValues.interventions) * 100} 
@@ -96,7 +108,9 @@ export default function ChartCard({
               
               {/* Activités */}
               <div className="flex items-center space-x-3">
-                <div className="w-20 text-xs text-gray-600">Activités</div>
+                <div className="w-20 text-xs text-gray-600">
+                  {language === 'ar' ? 'أنشطة' : 'Activités'}
+                </div>
                 <div className="flex-1 relative">
                   <Progress 
                     value={(item.activites / maxValues.activites) * 100} 

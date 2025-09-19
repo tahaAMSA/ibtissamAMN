@@ -3,7 +3,7 @@ app OpenSaaS {
     version: "^0.17.0"
   },
 
-  title: "My Open SaaS App",
+  title: "GEPS",
 
   head: [
     "<link rel='icon' href='/favicon.ico' />",
@@ -142,7 +142,7 @@ page PendingApprovalPage {
 route AccountRoute { path: "/account", to: AccountPage }
 page AccountPage {
   authRequired: true,
-  component: import Account from "@src/user/AccountPage"
+  component: import UserProfilePage from "@src/user/UserProfilePage"
 }
 //#endregion
 
@@ -313,6 +313,11 @@ action toggleUserStatus {
   entities: [User]
 }
 
+query getCurrentUser {
+  fn: import { getCurrentUser } from "@src/user/operations",
+  entities: [User]
+}
+
 action updateUserProfile {
   fn: import { updateUserProfile } from "@src/user/operations",
   entities: [User]
@@ -374,6 +379,24 @@ route RoleManagementRoute { path: "/admin/roles", to: RoleManagementPage }
 page RoleManagementPage {
   authRequired: true,
   component: import RoleManagementPage from "@src/admin/roleManagement/RoleManagementPage"
+}
+
+// Page de gestion de l'organisation
+route OrganizationManagementRoute { path: "/admin/organization", to: OrganizationManagementPage }
+page OrganizationManagementPage {
+  authRequired: true,
+  component: import OrganizationPage from "@src/admin/organization/OrganizationPage"
+}
+
+// Opérations pour la gestion de l'organisation
+query getCurrentOrganization {
+  fn: import { getCurrentOrganization } from "@src/admin/organization/operations",
+  entities: [Organization, User]
+}
+
+action updateOrganization {
+  fn: import { updateOrganization } from "@src/admin/organization/operations",
+  entities: [Organization, User]
 }
 
 // Opérations CRUD pour tous les modules

@@ -1,5 +1,5 @@
 import React, { memo, useState, useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../cn';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -14,7 +14,10 @@ import {
   ChevronDown,
   MessageSquare,
   HelpCircle,
-  User
+  User,
+  ArrowLeft,
+  Home,
+  ChevronRight
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,6 +35,7 @@ import {
 } from '../ui/tooltip';
 import type { AuthUser } from 'wasp/auth';
 import { UserRole } from '@prisma/client';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface HeaderProps {
   user?: AuthUser;
@@ -41,13 +45,6 @@ interface HeaderProps {
   onSearch?: (query: string) => void;
 }
 
-// Simuler quelques notifications pour le badge
-const mockNotifications = [
-  { id: 1, title: "Nouveau bénéficiaire", message: "Un nouveau dossier attend validation", time: "Il y a 5 min" },
-  { id: 2, title: "Rappel formation", message: "Formation prévue demain à 14h", time: "Il y a 1h" },
-  { id: 3, title: "Document expiré", message: "Vérifier les pièces d'identité", time: "Il y a 2h" }
-];
-
 const Header = memo(function Header({
   user,
   onMenuClick,
@@ -56,30 +53,80 @@ const Header = memo(function Header({
   onSearch
 }: HeaderProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { notifications, unreadCount } = useNotifications();
 
-  // Obtenir le titre de la page actuelle
-  const currentPageTitle = useMemo(() => {
-    const pathMap: Record<string, { fr: string; ar: string }> = {
-      '/dashboard': { fr: 'Tableau de bord', ar: 'لوحة التحكم' },
-      '/beneficiaries': { fr: 'Bénéficiaires', ar: 'المستفيدون' },
-      '/documents': { fr: 'Documents', ar: 'الوثائق' },
-      '/interventions': { fr: 'Interventions', ar: 'التدخلات' },
-      '/accommodation': { fr: 'Hébergement', ar: 'الإيواء' },
-      '/meals': { fr: 'Repas', ar: 'الوجبات' },
-      '/resources': { fr: 'Ressources', ar: 'الموارد' },
-      '/education': { fr: 'Éducation', ar: 'التعليم' },
-      '/activities': { fr: 'Activités', ar: 'الأنشطة' },
-      '/training': { fr: 'Formations', ar: 'التدريبات' },
-      '/projects': { fr: 'Projets', ar: 'المشاريع' },
-      '/budget': { fr: 'Budget', ar: 'الميزانية' },
-      '/notifications': { fr: 'Notifications', ar: 'الإشعارات' },
-      '/admin': { fr: 'Administration', ar: 'الإدارة' },
-      '/time-tracking': { fr: 'Suivi du temps', ar: 'تتبع الوقت' }
+  // Système de navigation et breadcrumb
+  const navigationInfo = useMemo(() => {
+    const pathMap: Record<string, { fr: string; ar: string; parent?: string; icon?: React.ReactNode }> = {
+      '/dashboard': { fr: 'Tableau de bord', ar: 'لوحة التحكم', icon: <Home className="w-4 h-4" /> },
+      '/beneficiaries': { fr: 'Bénéficiaires', ar: 'المستفيدون', parent: '/dashboard' },
+      '/documents': { fr: 'Documents', ar: 'الوثائق', parent: '/dashboard' },
+      '/interventions': { fr: 'Interventions', ar: 'التدخلات', parent: '/dashboard' },
+      '/accommodation': { fr: 'Hébergement', ar: 'الإيواء', parent: '/dashboard' },
+      '/meals': { fr: 'Repas', ar: 'الوجبات', parent: '/dashboard' },
+      '/resources': { fr: 'Ressources', ar: 'الموارد', parent: '/dashboard' },
+      '/education': { fr: 'Éducation', ar: 'التعليم', parent: '/dashboard' },
+      '/activities': { fr: 'Activités', ar: 'الأنشطة', parent: '/dashboard' },
+      '/training': { fr: 'Formations', ar: 'التدريبات', parent: '/dashboard' },
+      '/projects': { fr: 'Projets', ar: 'المشاريع', parent: '/dashboard' },
+      '/budget': { fr: 'Budget', ar: 'الميزانية', parent: '/dashboard' },
+      '/notifications': { fr: 'Notifications', ar: 'الإشعارات', parent: '/dashboard' },
+      '/admin': { fr: 'Administration', ar: 'الإدارة', parent: '/dashboard' },
+      '/time-tracking': { fr: 'Suivi du temps', ar: 'تتبع الوقت', parent: '/dashboard' },
+      '/account': { fr: 'Mon compte', ar: 'حسابي', parent: '/dashboard' },
+      '/demo-app': { fr: 'Application démo', ar: 'تطبيق تجريبي', parent: '/dashboard' },
+      '/file-upload': { fr: 'Téléchargement de fichiers', ar: 'رفع الملفات', parent: '/dashboard' }
     };
 
-    const pageInfo = pathMap[location.pathname];
-    return pageInfo ? pageInfo[language] : (language === 'ar' ? 'الصفحة الرئيسية' : 'Accueil');
+    // Gestion des pages dynamiques avec paramètres
+    const currentPath = location.pathname;
+    let pageInfo = pathMap[currentPath];
+    
+    // Gestion des routes dynamiques (ex: /beneficiaries/:id)
+    if (!pageInfo) {
+      if (currentPath.startsWith('/beneficiaries/') && currentPath !== '/beneficiaries') {
+        pageInfo = { 
+          fr: 'Détail bénéficiaire', 
+          ar: 'تفاصيل المستفيد', 
+          parent: '/beneficiaries' 
+        };
+      }
+      // Ajoutez d'autres routes dynamiques si nécessaire
+    }
+
+    const title = pageInfo ? pageInfo[language] : (language === 'ar' ? 'الصفحة الرئيسية' : 'Accueil');
+    
+    // Construire le breadcrumb
+    const buildBreadcrumb = (path: string): Array<{path: string, title: string, icon?: React.ReactNode}> => {
+      const info = pathMap[path];
+      if (!info) return [];
+      
+      const breadcrumb = [{
+        path,
+        title: info[language],
+        icon: info.icon
+      }];
+      
+      if (info.parent && info.parent !== path) {
+        return [...buildBreadcrumb(info.parent), ...breadcrumb];
+      }
+      
+      return breadcrumb;
+    };
+
+    const breadcrumb = buildBreadcrumb(currentPath);
+    const canGoBack = breadcrumb.length > 1;
+    const parentPath = pageInfo?.parent;
+
+    return {
+      title,
+      breadcrumb,
+      canGoBack,
+      parentPath,
+      icon: pageInfo?.icon
+    };
   }, [location.pathname, language]);
 
   // Informations utilisateur
@@ -140,6 +187,19 @@ const Header = memo(function Header({
     onMenuClick();
   }, [onMenuClick]);
 
+  // Navigation functions
+  const handleGoBack = useCallback(() => {
+    if (navigationInfo.parentPath) {
+      navigate(navigationInfo.parentPath);
+    } else {
+      navigate(-1);
+    }
+  }, [navigate, navigationInfo.parentPath]);
+
+  const handleBreadcrumbClick = useCallback((path: string) => {
+    navigate(path);
+  }, [navigate]);
+
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -159,8 +219,8 @@ const Header = memo(function Header({
     <TooltipProvider>
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-          {/* Section gauche */}
-          <div className="flex items-center gap-4">
+          {/* Section gauche - Navigation */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {/* Bouton menu mobile */}
             <Button
               variant="ghost"
@@ -171,10 +231,54 @@ const Header = memo(function Header({
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Titre de la page */}
-            <div className="hidden lg:block">
-              <h1 className="text-xl font-semibold text-foreground">
-                {currentPageTitle}
+            {/* Bouton retour */}
+            {navigationInfo.canGoBack && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleGoBack}
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {language === 'ar' ? 'العودة' : 'Retour'}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Breadcrumb navigation */}
+            <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1">
+              {navigationInfo.breadcrumb.map((crumb, index) => (
+                <React.Fragment key={crumb.path}>
+                  {index > 0 && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleBreadcrumbClick(crumb.path)}
+                    className={cn(
+                      "h-8 px-2 text-sm font-medium transition-colors",
+                      index === navigationInfo.breadcrumb.length - 1
+                        ? "text-foreground bg-accent/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    {crumb.icon && <span className="mr-2">{crumb.icon}</span>}
+                    <span className="truncate">{crumb.title}</span>
+                  </Button>
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* Titre simple pour mobile */}
+            <div className="sm:hidden min-w-0 flex-1">
+              <h1 className="text-lg font-semibold text-foreground truncate">
+                {navigationInfo.title}
               </h1>
             </div>
           </div>
@@ -195,17 +299,17 @@ const Header = memo(function Header({
 
           {/* Section droite */}
           <div className="flex items-center gap-2">
-            {/* Notifications */}
+            {/* Notifications - Vraies notifications */}
             <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="w-5 h-5" />
-                  {mockNotifications.length > 0 && (
+                  {unreadCount > 0 && (
                     <Badge 
                       variant="destructive" 
                       className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
                     >
-                      {mockNotifications.length}
+                      {unreadCount > 99 ? '99+' : unreadCount}
                     </Badge>
                   )}
                 </Button>
@@ -213,17 +317,38 @@ const Header = memo(function Header({
               <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel className="font-semibold">
                   {language === 'ar' ? 'الإشعارات' : 'Notifications'}
+                  {unreadCount > 0 && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      ({unreadCount} {language === 'ar' ? 'جديدة' : 'nouvelles'})
+                    </span>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {mockNotifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="flex flex-col items-start p-3">
-                    <div className="font-medium text-sm">{notification.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{notification.message}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{notification.time}</div>
+                {notifications && notifications.length > 0 ? (
+                  notifications.slice(0, 5).map((notification) => (
+                    <DropdownMenuItem key={notification.id} className="flex flex-col items-start p-3">
+                      <div className="font-medium text-sm">{notification.title}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{notification.message}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {new Intl.DateTimeFormat(language === 'ar' ? 'ar-MA' : 'fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit'
+                        }).format(new Date(notification.createdAt))}
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem className="text-center text-muted-foreground py-6">
+                    {language === 'ar' ? 'لا توجد إشعارات جديدة' : 'Aucune nouvelle notification'}
                   </DropdownMenuItem>
-                ))}
+                )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-center text-primary">
+                <DropdownMenuItem 
+                  className="text-center text-primary cursor-pointer"
+                  onClick={() => navigate('/notifications')}
+                >
                   {language === 'ar' ? 'عرض جميع الإشعارات' : 'Voir toutes les notifications'}
                 </DropdownMenuItem>
               </DropdownMenuContent>

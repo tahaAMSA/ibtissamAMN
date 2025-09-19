@@ -200,11 +200,15 @@ export default function AdminPage() {
                   className="border-blue-600 text-blue-600 hover:bg-blue-50"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  Gestion des Rôles
+                  Rôles Système
                 </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouvel utilisateur
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/admin/organization'}
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Organisation
                 </Button>
               </div>
             </div>

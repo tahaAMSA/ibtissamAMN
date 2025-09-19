@@ -15,12 +15,14 @@ interface ExpenseChartProps {
   title: string;
   categories: ExpenseCategory[];
   className?: string;
+  language?: 'ar' | 'fr';
 }
 
 export default function ExpenseChart({
   title,
   categories,
-  className
+  className,
+  language = 'fr'
 }: ExpenseChartProps) {
   const totalBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
   const totalSpent = categories.reduce((sum, cat) => sum + cat.amount, 0);
@@ -38,17 +40,23 @@ export default function ExpenseChart({
       <CardHeader className="pb-4">
         <CardTitle className="text-xl text-gray-900">{title}</CardTitle>
         <div className="text-sm text-gray-600">
-          <span className="font-medium">Total dépensé: {formatCurrency(totalSpent)}</span>
+          <span className="font-medium">
+            {language === 'ar' ? `إجمالي المصروف: ${formatCurrency(totalSpent)}` : `Total dépensé: ${formatCurrency(totalSpent)}`}
+          </span>
           <span className="mx-2">•</span>
-          <span>Budget: {formatCurrency(totalBudget)}</span>
+          <span>
+            {language === 'ar' ? `الميزانية: ${formatCurrency(totalBudget)}` : `Budget: ${formatCurrency(totalBudget)}`}
+          </span>
         </div>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Indicateur global */}
+        {/* Indicateur général */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="font-medium text-gray-700">Utilisation globale</span>
+            <span className="font-medium text-gray-700">
+              {language === 'ar' ? 'الاستخدام الإجمالي' : 'Utilisation totale'}
+            </span>
             <span className="text-gray-600">{((totalSpent / totalBudget) * 100).toFixed(1)}%</span>
           </div>
           <Progress 
@@ -57,7 +65,7 @@ export default function ExpenseChart({
           />
         </div>
 
-        {/* Détail par catégorie */}
+        {/* Détails par catégorie */}
         <div className="space-y-4">
           {categories.map((category, index) => {
             const percentage = (category.amount / category.budget) * 100;
@@ -76,7 +84,7 @@ export default function ExpenseChart({
                       {formatCurrency(category.amount)}
                     </div>
                     <div className="text-xs text-gray-500">
-                      sur {formatCurrency(category.budget)}
+                      {language === 'ar' ? `من ${formatCurrency(category.budget)}` : `sur ${formatCurrency(category.budget)}`}
                     </div>
                   </div>
                 </div>
@@ -90,7 +98,7 @@ export default function ExpenseChart({
                     )}
                   />
                   
-                  {/* Barre de dépassement si nécessaire */}
+                  {/* Barre de dépassement de budget si nécessaire */}
                   {isOverBudget && (
                     <div className="relative">
                       <div className="h-1 bg-red-200 rounded-full">
@@ -111,7 +119,10 @@ export default function ExpenseChart({
                     </span>
                     {isOverBudget && (
                       <span className="text-red-600 font-medium">
-                        Dépassement: {formatCurrency(category.amount - category.budget)}
+                        {language === 'ar' 
+                          ? `تجاوز: ${formatCurrency(category.amount - category.budget)}`
+                          : `Dépassement: ${formatCurrency(category.amount - category.budget)}`
+                        }
                       </span>
                     )}
                   </div>

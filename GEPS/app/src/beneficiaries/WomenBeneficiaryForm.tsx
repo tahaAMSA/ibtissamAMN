@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { createBeneficiary, updateBeneficiary } from 'wasp/client/operations';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../translations/useI18n';
 import { 
   Save, 
   X, 
@@ -226,7 +228,8 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
   beneficiary,
   onSuccess
 }) => {
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -301,10 +304,8 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
     resultatFinal: beneficiary?.resultatFinal || ''
   });
 
-  const isRTL = language === 'ar';
-
   // Traductions mémorisées pour la performance
-  const t = useMemo(() => ({
+  const translations = useMemo(() => ({
     title: language === 'ar' ? 'فيش المستفيدة - النساء' : 'Fiche Bénéficiaire - Femmes',
     save: language === 'ar' ? 'حفظ' : 'Enregistrer',
     cancel: language === 'ar' ? 'إلغاء' : 'Annuler',
@@ -351,13 +352,13 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
   }), [language]);
 
   const stepTitles = useMemo(() => [
-    { title: t.entretienInfo, icon: Mic, color: 'bg-pink-500' },
-    { title: t.historiqueInfo, icon: FileText, color: 'bg-pink-600' },
-    { title: t.identiteInfo, icon: User, color: 'bg-pink-700' },
-    { title: t.motifsVisite, icon: Info, color: 'bg-pink-800' },
-    { title: t.profilPersonnel, icon: Heart, color: 'bg-pink-900' },
-    { title: t.descriptionDocuments, icon: Camera, color: 'bg-pink-950' }
-  ], [t]);
+    { title: translations.entretienInfo, icon: Mic, color: 'bg-pink-500' },
+    { title: translations.historiqueInfo, icon: FileText, color: 'bg-pink-600' },
+    { title: translations.identiteInfo, icon: User, color: 'bg-pink-700' },
+    { title: translations.motifsVisite, icon: Info, color: 'bg-pink-800' },
+    { title: translations.profilPersonnel, icon: Heart, color: 'bg-pink-900' },
+    { title: translations.descriptionDocuments, icon: Camera, color: 'bg-pink-950' }
+  ], [translations]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,6 +370,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
         lastName: formData.lastName,
         dateOfBirth: formData.dateOfBirth,
         gender: 'Female',
+        beneficiaryType: 'FEMME' as const, // Formulaire femme = FEMME
         phone: formData.phone,
         address: formData.address,
         familySituation: formData.statutMatrimonial || 'Unknown',
@@ -449,13 +451,13 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <Mic className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.entretienInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.entretienInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات أساسية حول جلسة الاستماع' : 'Informations de base sur la session d\'écoute'}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <InputField label={t.intervenanteName} required>
+                <InputField label={translations.intervenanteName} required>
                   <input
                     type="text"
                     required
@@ -466,12 +468,12 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.duration}>
+                <InputField label={translations.duration}>
                   <select
                     value={formData.interviewDuration}
                     onChange={(e) => setFormData(prev => ({ ...prev, interviewDuration: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="15min">15 {language === 'ar' ? 'دقيقة' : 'minutes'}</option>
                     <option value="30min">30 {language === 'ar' ? 'دقيقة' : 'minutes'}</option>
                     <option value="45min">45 {language === 'ar' ? 'دقيقة' : 'minutes'}</option>
@@ -483,7 +485,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
               </div>
 
               <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <InputField label={t.firstName} required>
+                <InputField label={translations.firstName} required>
                   <input
                     type="text"
                     required
@@ -493,7 +495,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.lastName} required>
+                <InputField label={translations.lastName} required>
                   <input
                     type="text"
                     required
@@ -516,7 +518,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <FileText className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.historiqueInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.historiqueInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'تاريخ الاستفادة من خدمات المركز' : 'Historique d\'utilisation des services du centre'}</p>
                 </div>
               </div>
@@ -524,7 +526,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
               <div className="space-y-6">
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-4">
-                    {t.alreadyBenefited}
+                    {translations.alreadyBenefited}
                   </label>
                   <div className="flex space-x-6">
                     <label className="flex items-center cursor-pointer">
@@ -535,7 +537,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                         onChange={() => setFormData(prev => ({ ...prev, dejabeneficie: true }))}
                         className="w-4 h-4 text-pink-600 focus:ring-pink-500 border-gray-300"
                       />
-                      <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-sm font-medium text-gray-700`}>{t.yes}</span>
+                      <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-sm font-medium text-gray-700`}>{translations.yes}</span>
                     </label>
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -545,14 +547,14 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                         onChange={() => setFormData(prev => ({ ...prev, dejabeneficie: false }))}
                         className="w-4 h-4 text-pink-600 focus:ring-pink-500 border-gray-300"
                       />
-                      <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-sm font-medium text-gray-700`}>{t.no}</span>
+                      <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-sm font-medium text-gray-700`}>{translations.no}</span>
                     </label>
                   </div>
                 </div>
 
                 {formData.dejabeneficie && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <InputField label={t.previousDate}>
+                    <InputField label={translations.previousDate}>
                       <input
                         type="date"
                         value={formData.dateBeneficePrecedent}
@@ -560,7 +562,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                       />
                     </InputField>
 
-                    <InputField label={t.previousFileNumber}>
+                    <InputField label={translations.previousFileNumber}>
                       <input
                         type="text"
                         value={formData.numDossierPrecedent}
@@ -573,7 +575,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                 )}
 
                 <CheckboxGroup
-                  label={t.violenceDeclaration}
+                  label={translations.violenceDeclaration}
                   field="declarationViolenceCellule"
                   formData={formData}
                   handleCheckboxChange={handleCheckboxChange}
@@ -601,13 +603,13 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <User className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.identiteInfo}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.identiteInfo}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات الهوية الشخصية' : 'Informations d\'identité personnelle'}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                <InputField label={t.fullName} required>
+                <InputField label={translations.fullName} required>
                   <input
                     type="text"
                     required
@@ -617,7 +619,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.age} required>
+                <InputField label={translations.age} required>
                   <input
                     type="number"
                     required
@@ -628,7 +630,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.dateOfBirth} required>
+                <InputField label={translations.dateOfBirth} required>
                   <input
                     type="date"
                     required
@@ -637,7 +639,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.nationality}>
+                <InputField label={translations.nationality}>
                   <input
                     type="text"
                     value={formData.nationalite}
@@ -646,7 +648,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.cni}>
+                <InputField label={translations.cni}>
                   <input
                     type="text"
                     value={formData.cni}
@@ -655,12 +657,12 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.status}>
+                <InputField label={translations.status}>
                   <select
                     value={formData.statut}
                     onChange={(e) => setFormData(prev => ({ ...prev, statut: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="RESIDENTE">{language === 'ar' ? 'مقيمة' : 'Résidente'}</option>
                     <option value="MIGRANTE">{language === 'ar' ? 'مهاجرة' : 'Migrante'}</option>
                     <option value="TOURISTE">{language === 'ar' ? 'سائحة' : 'Touriste'}</option>
@@ -672,7 +674,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
               </div>
 
               <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <InputField label={t.phone}>
+                <InputField label={translations.phone}>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -681,7 +683,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   />
                 </InputField>
 
-                <InputField label={t.address}>
+                <InputField label={translations.address}>
                   <textarea
                     value={formData.address}
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
@@ -704,7 +706,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <Info className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.motifsVisite}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.motifsVisite}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'أسباب زيارة المركز' : 'Raisons de la visite au centre'}</p>
                 </div>
               </div>
@@ -753,7 +755,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <Heart className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.profilPersonnel}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.profilPersonnel}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'معلومات شخصية مفصلة' : 'Informations personnelles détaillées'}</p>
                 </div>
               </div>
@@ -764,7 +766,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                     value={formData.statutMatrimonial}
                     onChange={(e) => setFormData(prev => ({ ...prev, statutMatrimonial: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="Célibataire">{language === 'ar' ? 'عازبة' : 'Célibataire'}</option>
                     <option value="Mariée">{language === 'ar' ? 'متزوجة' : 'Mariée'}</option>
                     <option value="Divorcée">{language === 'ar' ? 'مطلقة' : 'Divorcée'}</option>
@@ -787,7 +789,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                     value={formData.education}
                     onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="Analphabète">{language === 'ar' ? 'أمية' : 'Analphabète'}</option>
                     <option value="Primaire">{language === 'ar' ? 'ابتدائي' : 'Primaire'}</option>
                     <option value="Collège">{language === 'ar' ? 'إعدادي' : 'Collège'}</option>
@@ -818,7 +820,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   <Camera className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{t.descriptionDocuments}</h3>
+                  <h3 className="text-xl font-bold text-gray-800">{translations.descriptionDocuments}</h3>
                   <p className="text-gray-600 text-sm">{language === 'ar' ? 'وصف الحالة والملاحظات' : 'Description du cas et observations'}</p>
                 </div>
               </div>
@@ -862,33 +864,15 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
         <div className="bg-gradient-to-r from-pink-500 to-pink-700 text-white px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex-1">
-              <h2 className="text-xl font-bold">{t.title}</h2>
+              <h2 className="text-xl font-bold">{translations.title}</h2>
               <div className="flex items-center mt-2 text-pink-100">
                 <span className="text-sm">
-                  {t.step} {currentStep} {t.of} {totalSteps}: {stepTitles[currentStep - 1].title}
+                  {translations.step} {currentStep} {translations.of} {totalSteps}: {stepTitles[currentStep - 1].title}
                 </span>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setLanguage('fr')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                    language === 'fr' ? 'bg-white text-pink-600' : 'bg-pink-500 text-white hover:bg-pink-400'
-                  }`}
-                >
-                  FR
-                </button>
-                <button
-                  onClick={() => setLanguage('ar')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                    language === 'ar' ? 'bg-white text-pink-600' : 'bg-pink-500 text-white hover:bg-pink-400'
-                  }`}
-                >
-                  AR
-                </button>
-              </div>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-pink-500 rounded-lg transition-colors"
@@ -966,7 +950,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
               }`}
             >
               <ArrowLeft className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {t.previous}
+              {translations.previous}
             </button>
 
             <div className="flex items-center space-x-4">
@@ -984,12 +968,12 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      {t.saving}
+                      {translations.saving}
                     </>
                   ) : (
                     <>
                       <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      {t.save}
+                      {translations.save}
                     </>
                   )}
                 </button>
@@ -999,7 +983,7 @@ const WomenBeneficiaryForm: React.FC<WomenBeneficiaryFormProps> = ({
                   onClick={handleNext}
                   className="flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
                 >
-                  {t.next}
+                  {translations.next}
                   <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
                 </button>
               )}

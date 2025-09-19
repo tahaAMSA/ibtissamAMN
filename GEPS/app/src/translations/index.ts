@@ -61,6 +61,18 @@ export const translations: Translations = {
     fr: 'Statistiques',
     ar: 'الإحصائيات'
   },
+  'dashboard.monthlyEvolution': {
+    fr: 'Évolution mensuelle',
+    ar: 'التطور الشهري'
+  },
+  'dashboard.monthlyEvolutionDesc': {
+    fr: 'Tendances des activités GEPS sur 6 mois',
+    ar: 'اتجاهات أنشطة GEPS على مدى 6 أشهر'
+  },
+  'dashboard.expenseDistribution': {
+    fr: 'Répartition des dépenses',
+    ar: 'توزيع النفقات'
+  },
   
   // Périodes
   'period.today': {
@@ -112,6 +124,10 @@ export const translations: Translations = {
   'stats.monthlyExpenses': {
     fr: 'Dépenses mensuelles',
     ar: 'مصروفات الشهر'
+  },
+  'stats.availableBudget': {
+    fr: 'Budget disponible',
+    ar: 'الميزانية المتاحة'
   },
   
   // Actions du dashboard
@@ -1366,5 +1382,117 @@ export const translations: Translations = {
   'general.reset': {
     fr: 'Réinitialiser',
     ar: 'إعادة تعيين'
+  },
+
+  // ========================================
+  // SIDEBAR NAVIGATION
+  // ========================================
+  'sidebar.navigation.main': {
+    fr: 'Principal',
+    ar: 'الرئيسية'
+  },
+  'sidebar.navigation.administration': {
+    fr: 'Administration',
+    ar: 'الإدارة'
+  },
+  'sidebar.group.services': {
+    fr: 'Services & Ressources',
+    ar: 'الخدمات والموارد'
+  },
+  'sidebar.group.support': {
+    fr: 'Accompagnement',
+    ar: 'المرافقة'
+  },
+  'sidebar.group.development': {
+    fr: 'Développement',
+    ar: 'التطوير'
+  },
+  'sidebar.group.management': {
+    fr: 'Gestion',
+    ar: 'الإدارة'
+  },
+  'sidebar.nav.dashboard': {
+    fr: 'Tableau de bord',
+    ar: 'لوحة التحكم'
+  },
+  'sidebar.nav.beneficiaries': {
+    fr: 'Bénéficiaires',
+    ar: 'المستفيدون'
+  },
+  'sidebar.nav.notifications': {
+    fr: 'Notifications',
+    ar: 'الإشعارات'
+  },
+  'sidebar.nav.accommodation': {
+    fr: 'Hébergement',
+    ar: 'الإيواء'
+  },
+  'sidebar.nav.meals': {
+    fr: 'Repas',
+    ar: 'الوجبات'
+  },
+  'sidebar.nav.resources': {
+    fr: 'Ressources',
+    ar: 'الموارد'
+  },
+  'sidebar.nav.documents': {
+    fr: 'Documents',
+    ar: 'الوثائق'
+  },
+  'sidebar.nav.interventions': {
+    fr: 'Interventions',
+    ar: 'التدخلات'
+  },
+  'sidebar.nav.education': {
+    fr: 'Éducation',
+    ar: 'التعليم'
+  },
+  'sidebar.nav.training': {
+    fr: 'Formations',
+    ar: 'التدريبات'
+  },
+  'sidebar.nav.activities': {
+    fr: 'Activités',
+    ar: 'الأنشطة'
+  },
+  'sidebar.nav.projects': {
+    fr: 'Projets',
+    ar: 'المشاريع'
+  },
+  'sidebar.nav.budget': {
+    fr: 'Budget',
+    ar: 'الميزانية'
+  },
+  'sidebar.nav.timeTracking': {
+    fr: 'Suivi du temps',
+    ar: 'تتبع الوقت'
+  },
+  'sidebar.nav.administration': {
+    fr: 'Administration',
+    ar: 'الإدارة'
+  },
+  'sidebar.language.switch': {
+    fr: 'Changer vers العربية',
+    ar: 'تغيير إلى Français'
+  },
+  'sidebar.language.current.fr': {
+    fr: 'FR',
+    ar: 'FR'
+  },
+  'sidebar.language.current.ar': {
+    fr: 'عر',
+    ar: 'عر'
+  },
+  'sidebar.tooltip.switchLanguage': {
+    fr: 'Changer vers l\'arabe',
+    ar: 'تغيير إلى الفرنسية'
+  },
+  'sidebar.tooltip.settings': {
+    fr: 'Paramètres',
+    ar: 'الإعدادات'
+  },
+  'sidebar.tooltip.logout': {
+    fr: 'Déconnexion',
+    ar: 'تسجيل الخروج'
   }
 }; 

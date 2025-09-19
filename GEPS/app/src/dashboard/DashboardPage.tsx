@@ -16,6 +16,7 @@ import {
 import { useQuery } from 'wasp/client/operations';
 import { useAuth } from 'wasp/client/auth';
 import { useI18n } from '../translations/useI18n';
+import { hasPermission, canAccessModule } from '../server/permissions';
 import { 
   getDashboardStats, 
   getDashboardActivities, 
@@ -57,8 +58,18 @@ const Dashboard: React.FC = () => {
   const totalBudget = dashboardStats?.totalBudget || 0;
   const totalExpenses = dashboardStats?.totalExpenses || 0;
 
-  // Vraies données mensuelles
-  const monthlyData = dashboardStats?.monthlyData || [];
+  // Fonction pour traduire les noms de mois
+  const getMonthName = (monthIndex: number) => {
+    const date = new Date(2024, monthIndex, 1);
+    const locale = language === 'ar' ? 'ar-MA' : 'fr-FR';
+    return date.toLocaleDateString(locale, { month: 'short' });
+  };
+
+  // Vraies données mensuelles avec traduction des noms de mois
+  const monthlyData = (dashboardStats?.monthlyData || []).map(item => ({
+    ...item,
+    month: getMonthName(item.monthIndex)
+  }));
 
   // Suppression des données de catégories simulées - elles seront dans expenseCategories
 
@@ -70,9 +81,13 @@ const Dashboard: React.FC = () => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    if (diffMins < 60) return `${diffMins} min`;
-    if (diffHours < 24) return `${diffHours}h`;
-    return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+    if (diffMins < 60) {
+      return language === 'ar' ? `${diffMins} دقيقة` : `${diffMins} min`;
+    }
+    if (diffHours < 24) {
+      return language === 'ar' ? `${diffHours} ساعة` : `${diffHours}h`;
+    }
+    return language === 'ar' ? `${diffDays} يوم` : `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
   };
 
   const getActivityIcon = (type: string) => {
@@ -97,17 +112,30 @@ const Dashboard: React.FC = () => {
   // Vraies alertes
   const alerts = dashboardAlerts || [];
 
-  const quickActions = [
-    { title: t('dashboard.action.addBeneficiary'), icon: Users, to: '/beneficiaries', color: 'bg-blue-500' },
-    { title: t('dashboard.action.createDocument'), icon: FileText, to: '/documents', color: 'bg-green-500' },
-    { title: t('dashboard.action.scheduleIntervention'), icon: MessageSquare, to: '/interventions', color: 'bg-yellow-500' },
-    { title: t('dashboard.action.manageAccommodation'), icon: Home, to: '/accommodation', color: 'bg-purple-500' },
-    { title: t('dashboard.action.addActivity'), icon: Activity, to: '/activities', color: 'bg-orange-500' },
-    { title: t('dashboard.action.manageBudget'), icon: DollarSign, to: '/budget', color: 'bg-red-500' }
+  // Actions rapides basées sur les permissions
+  const allQuickActions = [
+    { title: t('dashboard.action.addBeneficiary'), icon: Users, to: '/beneficiaries', color: 'bg-blue-500', module: 'BENEFICIARIES', action: 'CREATE' },
+    { title: t('dashboard.action.createDocument'), icon: FileText, to: '/documents', color: 'bg-green-500', module: 'DOCUMENTS', action: 'CREATE' },
+    { title: t('dashboard.action.scheduleIntervention'), icon: MessageSquare, to: '/interventions', color: 'bg-yellow-500', module: 'INTERVENTIONS', action: 'CREATE' },
+    { title: t('dashboard.action.manageAccommodation'), icon: Home, to: '/accommodation', color: 'bg-purple-500', module: 'ACCOMMODATION', action: 'READ' },
+    { title: t('dashboard.action.addActivity'), icon: Activity, to: '/activities', color: 'bg-orange-500', module: 'ACTIVITIES', action: 'CREATE' },
+    { title: t('dashboard.action.manageBudget'), icon: DollarSign, to: '/budget', color: 'bg-red-500', module: 'BUDGET', action: 'READ' }
   ];
+
+  const quickActions = allQuickActions.filter(action => 
+    user && hasPermission(user, action.module as any, action.action as any)
+  ).map(({ module, action, ...rest }) => rest);
 
   // Vraies catégories de dépenses avec couleurs
   const categoryColors = {
+    'الإقامة': 'bg-blue-500',
+    'الطعام': 'bg-green-500',
+    'الصحة': 'bg-red-500',
+    'التعليم': 'bg-yellow-500',
+    'النقل': 'bg-purple-500',
+    'التدريب': 'bg-orange-500',
+    'أخرى': 'bg-gray-500',
+    // Garder les anciennes clés pour compatibilité
     'Hébergement': 'bg-blue-500',
     'Alimentation': 'bg-green-500',
     'Santé': 'bg-red-500',
@@ -137,7 +165,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="text-right">
               <Badge variant="info" className="mb-2">
-                {new Date().toLocaleDateString('fr-FR', { 
+                {new Date().toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR', { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
@@ -145,7 +173,7 @@ const Dashboard: React.FC = () => {
                 })}
               </Badge>
               <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-                {new Date().toLocaleTimeString('fr-FR', { 
+                {new Date().toLocaleTimeString(language === 'ar' ? 'ar-MA' : 'fr-FR', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })}
@@ -181,73 +209,103 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Statistiques principales avec StatCard */}
+      {/* Statistiques principales avec StatCard basées sur les permissions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={t('stats.totalBeneficiaries')}
-          value={statsLoading ? '...' : totalBeneficiaries}
-          icon={Users}
-          variant="primary"
-        />
+        {user && canAccessModule(user, 'BENEFICIARIES') && (
+          <StatCard
+            title={t('stats.totalBeneficiaries')}
+            value={statsLoading ? '...' : totalBeneficiaries}
+            icon={Users}
+            variant="primary"
+          />
+        )}
         
-        <StatCard
-          title={t('stats.activeStays')}
-          value={statsLoading ? '...' : activeStays}
-          icon={Home}
-          variant="success"
-        />
+        {user && canAccessModule(user, 'ACCOMMODATION') && (
+          <StatCard
+            title={t('stats.activeStays')}
+            value={statsLoading ? '...' : activeStays}
+            icon={Home}
+            variant="success"
+          />
+        )}
         
-        <StatCard
-          title={t('stats.pendingInterventions')}
-          value={statsLoading ? '...' : pendingInterventions}
-          icon={MessageSquare}
-          variant="warning"
-        />
+        {user && canAccessModule(user, 'INTERVENTIONS') && (
+          <StatCard
+            title={t('stats.pendingInterventions')}
+            value={statsLoading ? '...' : pendingInterventions}
+            icon={MessageSquare}
+            variant="warning"
+          />
+        )}
         
-        <StatCard
-          title="Budget disponible"
-          value={statsLoading ? '...' : `${((totalBudget - totalExpenses) / 1000).toFixed(0)}K MAD`}
-          icon={DollarSign}
-          variant="danger"
-        />
+        {user && canAccessModule(user, 'BUDGET') && (
+          <StatCard
+            title={t('stats.availableBudget')}
+            value={statsLoading ? '...' : `${((totalBudget - totalExpenses) / 1000).toFixed(0)}K MAD`}
+            icon={DollarSign}
+            variant="danger"
+          />
+        )}
       </div>
 
       {/* Section principale avec graphiques et alertes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Graphique de tendance moderne */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Évolution mensuelle"
-            description="Tendances des activités GEPS sur 6 mois"
-            data={monthlyData}
-          />
-        </div>
+      {(() => {
+        const canViewChart = user && (user.isAdmin || user.role === 'ADMIN' || user.role === 'DIRECTEUR' || user.role === 'COORDINATEUR');
+        return (
+          <div className={`grid grid-cols-1 gap-6 ${canViewChart ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+            {/* Graphique de tendance moderne - visible pour les rôles de supervision */}
+            {canViewChart && (
+              <div className="lg:col-span-2">
+                <ChartCard
+                  title={t('dashboard.monthlyEvolution')}
+                  description={t('dashboard.monthlyEvolutionDesc')}
+                  data={monthlyData}
+                  language={language}
+                />
+              </div>
+            )}
 
-        {/* Alertes modernes */}
+        {/* Alertes modernes - visibles pour tous */}
         <AlertCard
           title={t('dashboard.alerts')}
           alerts={alerts}
+          language={language}
         />
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Répartition des dépenses et activité récente */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ExpenseChart
-          title="Répartition des dépenses"
-          categories={expenseCategories}
-        />
+      {(() => {
+        const canViewBudget = user && canAccessModule(user, 'BUDGET');
+        return (
+          <div className={`grid grid-cols-1 gap-6 ${canViewBudget ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
+            {/* Graphique des dépenses - visible pour les rôles financiers et de supervision */}
+            {canViewBudget && (
+              <ExpenseChart
+                title={t('dashboard.expenseDistribution')}
+                categories={expenseCategories}
+                language={language}
+              />
+            )}
 
-        <RecentActivity
-          title={t('dashboard.recentActivity')}
-          activities={recentActivities}
-        />
-      </div>
+            {/* Activité récente - visible pour tous */}
+            <RecentActivity
+              title={t('dashboard.recentActivity')}
+              activities={recentActivities}
+              language={language}
+            />
+          </div>
+        );
+      })()}
 
-      {/* Actions rapides modernes */}
-      <QuickActions
-        title={t('dashboard.quickActions')}
-        actions={quickActions}
-      />
+      {/* Actions rapides modernes - uniquement si l'utilisateur a des permissions */}
+      {quickActions.length > 0 && (
+        <QuickActions
+          title={t('dashboard.quickActions')}
+          actions={quickActions}
+        />
+      )}
     </div>
   );
 };

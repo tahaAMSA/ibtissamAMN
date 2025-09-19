@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { createBeneficiary, updateBeneficiary } from 'wasp/client/operations';
+import { useAuth } from 'wasp/client/auth';
+import { useI18n } from '../translations/useI18n';
 import { 
   Save, 
   X, 
@@ -95,7 +97,8 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
   beneficiary,
   onSuccess
 }) => {
-  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const { data: user } = useAuth();
+  const { t, lang: language, isRTL, dir } = useI18n(user as any);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 8;
   
@@ -153,10 +156,8 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
     followUpPlan: beneficiary?.followUpPlan || ''
   });
 
-  const isRTL = language === 'ar';
-
   // Traductions
-  const t = {
+  const translations = {
     title: language === 'ar' ? 'فيش المستفيد - الأطفال' : 'Fiche Bénéficiaire - Enfants',
     save: language === 'ar' ? 'حفظ' : 'Enregistrer',
     cancel: language === 'ar' ? 'إلغاء' : 'Annuler',
@@ -207,14 +208,14 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
   };
 
   const stepTitles = [
-    t.basicInfo,
-    t.familyInfo,
-    t.schoolInfo,
-    t.healthInfo,
-    t.familySituation,
-    t.servicesNeeds,
-    t.psychologicalSupport,
-    t.activitiesAndNotes
+    translations.basicInfo,
+    translations.familyInfo,
+    translations.schoolInfo,
+    translations.healthInfo,
+    translations.familySituation,
+    translations.servicesNeeds,
+    translations.psychologicalSupport,
+    translations.activitiesAndNotes
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -226,6 +227,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
         lastName: formData.lastName,
         dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
+        beneficiaryType: 'ENFANT' as const, // Formulaire enfant = ENFANT
         phone: formData.parentPhone,
         address: formData.familyAddress,
         familySituation: formData.parentsMaritalStatus,
@@ -295,13 +297,13 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center mb-4">
                 <Baby className={`w-5 h-5 text-blue-600 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                <h3 className="text-lg font-semibold text-gray-800">{t.basicInfo}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{translations.basicInfo}</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.firstName} *
+                    {translations.firstName} *
                   </label>
                   <input
                     type="text"
@@ -315,7 +317,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.lastName} *
+                    {translations.lastName} *
                   </label>
                   <input
                     type="text"
@@ -329,7 +331,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.dateOfBirth} *
+                    {translations.dateOfBirth} *
                   </label>
                   <input
                     type="date"
@@ -342,7 +344,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.gender} *
+                    {translations.gender} *
                   </label>
                   <select
                     required
@@ -350,9 +352,9 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">{t.select}</option>
-                    <option value="Male">{t.male}</option>
-                    <option value="Female">{t.female}</option>
+                    <option value="">{translations.select}</option>
+                    <option value="Male">{translations.male}</option>
+                    <option value="Female">{translations.female}</option>
                   </select>
                 </div>
               </div>
@@ -366,13 +368,13 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
             <div className="bg-blue-100 p-4 rounded-lg">
               <div className="flex items-center mb-4">
                 <Users className={`w-5 h-5 text-blue-700 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                <h3 className="text-lg font-semibold text-gray-800">{t.familyInfo}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{translations.familyInfo}</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.parentName} *
+                    {translations.parentName} *
                   </label>
                   <input
                     type="text"
@@ -386,7 +388,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.parentPhone} *
+                    {translations.parentPhone} *
                   </label>
                   <input
                     type="tel"
@@ -399,7 +401,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.emergencyContact}
+                    {translations.emergencyContact}
                   </label>
                   <input
                     type="text"
@@ -412,7 +414,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.familyAddress} *
+                    {translations.familyAddress} *
                   </label>
                   <textarea
                     required
@@ -434,13 +436,13 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
             <div className="bg-sky-100 p-4 rounded-lg">
               <div className="flex items-center mb-4">
                 <School className={`w-5 h-5 text-sky-600 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                <h3 className="text-lg font-semibold text-gray-800">{t.schoolInfo}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{translations.schoolInfo}</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.schoolName}
+                    {translations.schoolName}
                   </label>
                   <input
                     type="text"
@@ -453,14 +455,14 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.schoolLevel}
+                    {translations.schoolLevel}
                   </label>
                   <select
                     value={formData.schoolLevel}
                     onChange={(e) => setFormData({ ...formData, schoolLevel: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">{t.select}</option>
+                    <option value="">{translations.select}</option>
                     <option value="Maternelle">{language === 'ar' ? 'التحضيري' : 'Maternelle'}</option>
                     <option value="CP">{language === 'ar' ? 'السنة الأولى' : 'CP'}</option>
                     <option value="CE1">{language === 'ar' ? 'السنة الثانية' : 'CE1'}</option>
@@ -476,7 +478,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.academicYear}
+                    {translations.academicYear}
                   </label>
                   <input
                     type="text"
@@ -489,7 +491,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.schoolAddress}
+                    {translations.schoolAddress}
                   </label>
                   <input
                     type="text"
@@ -502,7 +504,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.hasSchoolDifficulties}
+                    {translations.hasSchoolDifficulties}
                   </label>
                   <div className="flex space-x-4 mb-3">
                     <label className="flex items-center">
@@ -513,7 +515,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                         onChange={() => setFormData({ ...formData, hasSchoolDifficulties: true })}
                         className="mr-2"
                       />
-                      {t.yes}
+                      {translations.yes}
                     </label>
                     <label className="flex items-center">
                       <input
@@ -523,14 +525,14 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                         onChange={() => setFormData({ ...formData, hasSchoolDifficulties: false })}
                         className="mr-2"
                       />
-                      {t.no}
+                      {translations.no}
                     </label>
                   </div>
 
                   {formData.hasSchoolDifficulties && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t.schoolDifficulties}
+                        {translations.schoolDifficulties}
                       </label>
                       <textarea
                         value={formData.schoolDifficulties}
@@ -553,13 +555,13 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center mb-4">
                 <Heart className={`w-5 h-5 text-blue-600 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                <h3 className="text-lg font-semibold text-gray-800">{t.healthInfo}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{translations.healthInfo}</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.healthConditions}
+                    {translations.healthConditions}
                   </label>
                   <textarea
                     value={formData.healthConditions}
@@ -572,7 +574,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.allergies}
+                    {translations.allergies}
                   </label>
                   <textarea
                     value={formData.allergies}
@@ -585,7 +587,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.medications}
+                    {translations.medications}
                   </label>
                   <textarea
                     value={formData.medications}
@@ -598,7 +600,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.doctorName}
+                    {translations.doctorName}
                   </label>
                   <input
                     type="text"
@@ -611,7 +613,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.doctorPhone}
+                    {translations.doctorPhone}
                   </label>
                   <input
                     type="tel"
@@ -643,26 +645,12 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold">{t.title}</h2>
+            <h2 className="text-xl font-bold">{translations.title}</h2>
             <p className="text-sm opacity-90">
-              {t.step} {currentStep} {t.of} {totalSteps}: {stepTitles[currentStep - 1]}
+              {translations.step} {currentStep} {translations.of} {totalSteps}: {stepTitles[currentStep - 1]}
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setLanguage('fr')}
-                className={`px-3 py-1 rounded ${language === 'fr' ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'}`}
-              >
-                FR
-              </button>
-              <button
-                onClick={() => setLanguage('ar')}
-                className={`px-3 py-1 rounded ${language === 'ar' ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'}`}
-              >
-                AR
-              </button>
-            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-blue-400 rounded-lg transition-colors"
@@ -699,7 +687,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            {t.previous}
+            {translations.previous}
           </button>
 
           <div className="flex space-x-2">
@@ -710,7 +698,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                 className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                {t.save}
+                {translations.save}
               </button>
             ) : (
               <button
@@ -718,7 +706,7 @@ const ChildrenBeneficiaryForm: React.FC<ChildrenBeneficiaryFormProps> = ({
                 onClick={handleNext}
                 className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
-                {t.next}
+                {translations.next}
               </button>
             )}
           </div>

@@ -14,6 +14,7 @@ interface AlertCardProps {
   title: string;
   alerts: Alert[];
   className?: string;
+  language?: 'ar' | 'fr';
 }
 
 const alertConfig = {
@@ -52,7 +53,8 @@ const priorityVariants = {
 export default function AlertCard({
   title,
   alerts,
-  className
+  className,
+  language = 'fr'
 }: AlertCardProps) {
   return (
     <Card className={cn('border-blue-100 border-2', className)}>
@@ -64,7 +66,9 @@ export default function AlertCard({
         {alerts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-green-500" />
-            <p className="text-sm">Aucune alerte pour le moment</p>
+            <p className="text-sm">
+              {language === 'ar' ? 'لا توجد تنبيهات في الوقت الحالي' : 'Aucune alerte pour le moment'}
+            </p>
           </div>
         ) : (
           alerts.map((alert, index) => {
@@ -89,8 +93,12 @@ export default function AlertCard({
                     variant={priorityVariants[alert.priority]}
                     className="ml-2 flex-shrink-0"
                   >
-                    {alert.priority === 'high' ? 'Urgent' : 
-                     alert.priority === 'medium' ? 'Moyen' : 'Faible'}
+                    {language === 'ar' 
+                      ? (alert.priority === 'high' ? 'عاجل' : 
+                         alert.priority === 'medium' ? 'متوسط' : 'منخفض')
+                      : (alert.priority === 'high' ? 'Urgent' : 
+                         alert.priority === 'medium' ? 'Moyen' : 'Faible')
+                    }
                   </Badge>
                 </div>
               </div>
